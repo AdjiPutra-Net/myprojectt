@@ -239,7 +239,7 @@ cat ~/.ssh/id_rsa.pub | ssh lksadmin@192.168.56.110 "mkdir -p ~/.ssh && cat >> ~
 
 ## 🔐 7. Analisa Intrusion Detection System (IDS) - Snort<a name="Analisa Intrusion Detection System (IDS) Snort"></a>
 
-
+lanjut
 
 ## 🧾 8. Pengujian IDS<a name="Pengujian IDS"></a>
 

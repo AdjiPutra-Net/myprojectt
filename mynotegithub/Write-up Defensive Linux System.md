@@ -261,24 +261,24 @@ PermitRootLogin no
 ## 🧾 6. Hasil Pengujian<a name="Hasil Pengujian"></a>
 
 #### ✅ Tahap 1: Mengamankan Port
-![Alt Text](Pengamanan_Port.png)
+![Alt Text](image/Pengamanan_Port.png)
 
 #### ✅ Tahap 2: Membuat User
-![Alt Text](Membuat_User.png)
+![Alt Text](image/Membuat_User.png)
 
 
 #### ✅ Tahap 3: Mengaktifkan Audit (auditd)
-![Alt Text](Audit_2.png)
-![Alt Text](Audit_3.png)
-![Alt Text](Audit_1.png)
+![Alt Text](image/Audit_2.png)
+![Alt Text](image/Audit_3.png)
+![Alt Text](image/Audit_1.png)
 
 #### ✅ Bonus Step 4: Disable Root Login via SSH
-![Alt Text](disable_ssh_login.png)
+![Alt Text](image/disable_ssh_login.png)
 
 #### ✅ Bonus Step 5: Login Menggunakan SSH-Key tanpa Autentifkasi Password (Lebih Aman)
-![Alt Text](ssh_key_3.png)
-![Alt Text](ssh_key_2.png)
-![Alt Text](ssh_key_1.png)
+![Alt Text](image/ssh_key_3.png)
+![Alt Text](image/ssh_key_2.png)
+![Alt Text](image/ssh_key_1.png)
 
 
 ---

@@ -1065,7 +1065,7 @@ $comments = file_exists("komen.txt") ? file_get_contents("komen.txt") : "";
 
 ---
 
-## 🛠️ 2. Database Setup (MySQL)
+#### 🛠️ 2. Database Setup (MySQL)
 
 Login ke MySQL dan buat database:
 

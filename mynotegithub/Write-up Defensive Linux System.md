@@ -270,17 +270,17 @@ PermitRootLogin no
 
 
 #### ✅ Tahap 3: Mengaktifkan Audit (auditd)
-![Alt Text](../image/Audit_2.png)
-![Alt Text](../image/Audit_3.png)
-![Alt Text](../image/Audit_1.png)
+![Alt Text](image/Audit_2.png)
+![Alt Text](image/Audit_3.png)
+![Alt Text](image/Audit_1.png)
 
 #### ✅ Bonus Step 4: Disable Root Login via SSH
-![Alt Text](../image/disable_ssh_login.png)
+![Alt Text](image/disable_ssh_login.png)
 
 #### ✅ Bonus Step 5: Login Menggunakan SSH-Key tanpa Autentifkasi Password (Lebih Aman)
-![Alt Text](../image/ssh_key_3.png)
-![Alt Text](../image/ssh_key_2.png)
-![Alt Text](../image/ssh_key_1.png)
+![Alt Text](image/ssh_key_3.png)
+![Alt Text](image/ssh_key_2.png)
+![Alt Text](image/ssh_key_1.png)
 
 
 ---

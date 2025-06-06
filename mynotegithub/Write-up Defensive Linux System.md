@@ -60,7 +60,7 @@ Mengetahui cara bertahan dari serangan non-etika hacker
   <li>Membuat User</li>
   <li>Mengaktifkan Audit (auditd)</li>
   <li>Disable Root Login via SSH</li>
-  <li>Auto Logout Idle Session</li>
+  <li>Login Menggunakan SSH-Key</li>
 </ol>
 
 
@@ -81,7 +81,6 @@ Mengetahui cara bertahan dari serangan non-etika hacker
 #### 💡 Kenapa?  
 Kita harus **matiin semua service yang gak penting**, biar **attack surface makin sempit**.  
 🔓 **Port yang kebuka = pintu masuk serangan.**
-
 **[Ubuntu]**
 ```Terminal
 
@@ -120,7 +119,6 @@ sudo netstat -tuln
 #### 💡 Kenapa?
 - **Root** punya akses full, jangan dipakai buat harian.
 - Kita bikin user biasa + kasih dia akses `sudo` (admin level tapi ada jejaknya).
-
 **[Ubuntu]**
 ```Terminal
 
@@ -148,7 +146,6 @@ sudo whoami   # harusnya output: root
 
 #### 💡 Kenapa?
 - Biar semua aktivitas penting ke-log: login, akses file penting, penggunaan sudo, dsb.
-
 **[Ubuntu]**
 ```Terminal
 
@@ -173,10 +170,9 @@ sudo aureport -au  # report login attempts
 - Cocok buat forensik & analisis pelanggaran.
 <br></br>
 
-### ✅ Bonus Step: Disable Root Login via SSH
+### ✅ Bonus Step 4: Disable Root Login via SSH
 #### 💡 Kenapa?
 - Akses root langsung lewat SSH = bad practice. Gunakan user biasa + sudo
-
 **[Ubuntu]**
 ```Terminal
 
@@ -195,13 +191,13 @@ sudo systemctl restart ssh
 - Supaya vm lain yang ingin mengakses vm saya via ssh tidak bisa langsung naik jabatannya, ibarat one piece musuhnya luffy im-sama `(/root)` cukup menjadi holly knight/gorosei saja `(/home/user)`
 <br></br>
 
-### ✅ Bonus Step: Login Menggunakan SSH-Key tanpa Autentifkasi Password (Lebih Aman)
+### ✅ Bonus Step 5: Login Menggunakan SSH-Key tanpa Autentifkasi Password (Lebih Aman)
 #### 💡 Kenapa?
 - Karena kalo misalnya menggunakan password saja rawan untuk kena `brute force` password ssh untuk masuk kedalam sistem
-
 **[Ubuntu]**
 ```Terminal
 
+# Disisi Client, Misal Kali Linux atau Distro Linux Lainnya
 ssh-keygen -t rsa -b 4096
 
 ```
@@ -213,7 +209,8 @@ Enter passphrase (empty for no passphrase): [ENTER] atau isi kalau mau
 `~/.ssh/id_rsa (private key)` → **JANGAN DIBAGIKAN**
 `~/.ssh/id_rsa.pub (public key)` → **YANG AKAN DIKIRIM KE SERVER**
 
-#### Cara Membagikan Public Key ke VM Lain?
+#### Cara Membagikan Public Key ke VM Lain: 
+Misal Client (Pembuat SSH-Key) membagikan Kunci Public Key nya ke vm lain agar Client bisa mengakses vm tersebut tanpa menggunakan Password. 
 Cara gampang:
 **[Ubuntu]**
 ```Terminal
@@ -224,6 +221,7 @@ Contoh:
 ssh-copy-id -i ~/.ssh/id_rsa.pub lksadmin@192.168.56.110
 
 ```
+
 #### 📌 Kalau `ssh-copy-id` gak ada, bisa manual:
 **[Ubuntu]**
 ```Terminal
@@ -232,8 +230,56 @@ cat ~/.ssh/id_rsa.pub | ssh lksadmin@192.168.56.110 "mkdir -p ~/.ssh && cat >> ~
 
 ```
 
+#### 🔧 Pastikan Permission-nya Bener di Server atau VM lain
+Login ke Ubuntu Server, lalu:
+**[Ubuntu]**
+```Terminal
+
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/authorized_keys # sesuaikan nama file enkripsinya apa didalam folder .ssh nya, default namenya adalah authorized_keys
+
+```
+
+#### 🔧 Edit Konfigurasi SSH di Server (Ubuntu)
+**[Ubuntu]**
+```Terminal
+
+# Edit konfigurasi ssh
+sudo nano /etc/ssh/sshd_config
+
+```
+
+Pastikan nilai berikut:
+```Terminal
+
+PasswordAuthentication no
+PubkeyAuthentication yes
+PermitRootLogin no
+
+```
 
 ## 🧾 6. Hasil Pengujian<a name="Hasil Pengujian"></a>
+
+##### ✅ Tahap 1: Mengamankan Port
+![Alt Text](Pengamanan_Port.png)
+
+##### ✅ Tahap 2: Membuat User
+![Alt Text](Membuat_User.png)
+
+
+##### ✅ Tahap 3: Mengaktifkan Audit (auditd)
+![Alt Text](Audit_2.png)
+![Alt Text](Audit_3.png)
+![Alt Text](Audit_1.png)
+
+##### ✅ Bonus Step 4: Disable Root Login via SSH
+![Alt Text](disable_ssh_login.png)
+
+##### ✅ Bonus Step 5: Login Menggunakan SSH-Key tanpa Autentifkasi Password (Lebih Aman)
+![Alt Text](ssh_key_3.png)
+![Alt Text](ssh_key_2.png)
+![Alt Text](ssh_key_1.png)
+
 
 ---
 
@@ -262,13 +308,13 @@ lanjut
 
 
 
-## 🧠 . Kesimpulan <a name="kesimpulan"></a>
+## 🧠 . Kesimpulan <a name="Kesimpulan"></a>
 
 Server berhasil di-hardening sesuai best practices…
 
 ---
 
-## 📎 . Lampiran <a name="lampiran"></a>
+## 📎 . Lampiran <a name="Lampiran"></a>
 
 - Screenshot
 - Log hasil uji
@@ -277,3 +323,4 @@ Server berhasil di-hardening sesuai best practices…
 ---
 
 <p align="center"><em>Dokumentasi ini dibuat dengan semangat open source ❤️</em></p>
+

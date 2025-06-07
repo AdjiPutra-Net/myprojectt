@@ -821,8 +821,6 @@ collation-server      = utf8mb4_general_ci
 
 ---
 
-Kalau kamu ingin bantu setup remote access yang aman, tinggal bilang aja ya!
-
 🛠️ **Login ke MariaDB:**
 
 ```bash

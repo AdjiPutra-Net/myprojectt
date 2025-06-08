@@ -509,7 +509,472 @@ snort -i eth0 -c /etc/snort/snort.conf -A console
 
 ---
 
+**XAMPP** umumnya dikenal sebagai software berbasis GUI (Graphical User Interface) yang lebih sering dipakai di desktop seperti Ubuntu Desktop, Windows, atau macOS. Tapi, **XAMPP tetap bisa dijalankan di Ubuntu Server (CLI only)**, karena:
 
+### 🔍 Fakta Utama:
+
+- **XAMPP sebenarnya adalah bundle dari Apache, MySQL/MariaDB, PHP, dan Perl**, dibungkus dengan installer.
+    
+- Meskipun installer-nya menyertakan GUI, **ia juga menyediakan antarmuka CLI (command-line)** yang bisa digunakan di Ubuntu Server (tanpa GUI/X11).
+    
+
+---
+
+#### ✅ Cara Install XAMPP di Ubuntu Server 24.04.2 LTS (tanpa GUI)
+
+#### 1. **Download XAMPP (Linux Installer)**
+
+Login ke server kamu dan jalankan:
+
+```bash
+cd /tmp
+wget https://www.apachefriends.org/xampp-files/8.2.12/xampp-linux-x64-8.2.12-0-installer.run
+```
+
+> Ganti link `xampp-linux-x64-8.2.12-0-installer.run` dengan versi terbaru dari [https://www.apachefriends.org/index.html](https://www.apachefriends.org/index.html) jika perlu.
+
+---
+
+#### 2. **Beri izin eksekusi pada file installer**
+
+```bash
+chmod +x xampp-linux-x64-8.2.12-0-installer.run
+```
+
+---
+
+#### 3. **Jalankan installer (tanpa GUI)**
+
+```bash
+sudo ./xampp-linux-x64-8.2.12-0-installer.run --mode text
+```
+
+> Tambahkan `--mode text` agar installer berjalan dalam **mode teks (CLI)**.
+
+---
+
+#### 4. **Ikuti wizard instalasi**
+
+Kamu akan melihat tampilan berbasis teks (semi-interaktif), cukup ikuti petunjuk seperti:
+
+- Lokasi instalasi (default: `/opt/lampp`)
+    
+- Komponen yang ingin dipasang
+    
+
+---
+
+#### ✅ Menjalankan & Mengelola XAMPP dari CLI
+
+Setelah instalasi:
+
+#### 🔄 Start XAMPP:
+
+```bash
+sudo /opt/lampp/lampp start
+```
+
+#### ⏹ Stop XAMPP:
+
+```bash
+sudo /opt/lampp/lampp stop
+```
+
+#### 🔁 Restart XAMPP:
+
+```bash
+sudo /opt/lampp/lampp restart
+```
+
+#### 🔍 Cek status XAMPP:
+
+```bash
+sudo /opt/lampp/lampp status
+```
+
+---
+
+#### 📂 Folder Penting XAMPP
+
+|Komponen|Lokasi|
+|---|---|
+|Web Root|`/opt/lampp/htdocs/`|
+|Apache Conf|`/opt/lampp/etc/httpd.conf`|
+|PHP Config|`/opt/lampp/etc/php.ini`|
+|MySQL Data|`/opt/lampp/var/mysql/`|
+|Logs|`/opt/lampp/logs/`|
+
+---
+
+#### 🔧 Akses Web Server di Ubuntu Server
+
+Jika kamu ingin mengakses XAMPP dari browser di komputer host (misalnya `http://<IP_VM>/`), pastikan:
+
+1. Apache sudah berjalan.
+    
+2. Port 80 tidak diblokir oleh firewall.
+    
+3. VM kamu pakai Adapter **Bridged** atau **Host-Only + Port Forwarding**.
+    
+
+---
+
+#### ✋ Alternatif: Instal manual LAMP stack
+
+Kalau kamu tidak butuh antarmuka XAMPP, bisa juga langsung pakai:
+
+```bash
+sudo apt update
+sudo apt install apache2 mysql-server php libapache2-mod-php php-mysql
+```
+
+Ini LAMP versi "native" Ubuntu, lebih fleksibel & ringan untuk server.
+
+---
+
+#### ✅ LANGKAH 1 – Jalankan XAMPP di Ubuntu Server (tanpa GUI)
+
+Pastikan XAMPP sudah terinstal di server kamu, dan Apache + MySQL sudah jalan:
+
+```bash
+sudo /opt/lampp/lampp start
+```
+
+Kalau belum terinstal, kamu bisa lihat langkah instalasi XAMPP via CLI yang saya kasih di atas.
+
+---
+
+#### ✅ LANGKAH 2 – Pindahkan File Lab ke Direktori XAMPP
+
+Secara default, web root XAMPP ada di:
+
+```bash
+/opt/lampp/htdocs/
+```
+
+Misalnya kamu simpan semua file lab kamu (`index.php`, `login.php`, `comment.php`, `db.php`, `reset_comments.php`, dll) ke dalam folder `labserangan/`:
+
+```bash
+sudo mkdir /opt/lampp/htdocs/labserangan
+sudo cp /path/to/your/files/* /opt/lampp/htdocs/labserangan/
+sudo chown -R daemon:daemon /opt/lampp/htdocs/labserangan
+```
+
+> Ganti `/path/to/your/files/` dengan lokasi tempat file-file kamu berada.
+
+---
+
+#### ✅ LANGKAH 3 – Setup Database
+
+Masuk ke MySQL-nya XAMPP (bukan `mysql` bawaan Ubuntu):
+
+```bash
+sudo /opt/lampp/bin/mysql -u root
+```
+
+Lalu jalankan semua query SQL yang kamu punya dari `database.sql` dan user setup:
+
+```sql
+-- 1. Buat database & tabel
+CREATE DATABASE IF NOT EXISTS labserangan;
+USE labserangan;
+
+CREATE TABLE users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(100),
+  password VARCHAR(100)
+);
+
+CREATE TABLE comments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  content TEXT
+);
+
+-- 2. Insert user dummy
+INSERT INTO users (username, password) VALUES ('admin', 'admin123');
+
+-- 3. Buat user khusus
+CREATE USER 'webuser'@'localhost' IDENTIFIED BY 'webpass123';
+GRANT ALL PRIVILEGES ON labserangan.* TO 'webuser'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+Ketik `exit` untuk keluar dari MySQL.
+
+---
+
+#### ✅ LANGKAH 4 – Akses Web Lab dari Browser
+
+Asumsikan kamu mengakses Ubuntu Server ini dari browser di komputer host atau jaringan lain.
+
+1. Cek IP Ubuntu Server kamu:
+    
+    ```bash
+    ip a | grep inet
+    ```
+    
+    Misalnya IP kamu `192.168.56.101`.
+    
+2. Akses via browser:
+    
+    ```
+    http://192.168.56.101/labserangan/
+    ```
+    
+    Kamu akan melihat form login dan form komentar.
+    
+
+---
+
+#### ✅ LANGKAH 5 – Uji Serangan SQL Injection & XSS
+
+#### 💥 SQL Injection
+
+Masukkan ini ke form login:
+
+```plaintext
+Username: admin' OR 1=1 --
+Password: apasaja
+```
+
+✔️ Harusnya login berhasil karena query jadi:
+
+```sql
+SELECT * FROM users WHERE username = 'admin' OR 1=1 -- ' AND password = '...'
+```
+
+---
+
+#### 💥 XSS
+
+Di form komentar, masukkan:
+
+```html
+<script>alert('XSS by kamu!')</script>
+```
+
+✔️ Harusnya setelah submit, alert XSS langsung muncul di halaman index.
+
+---
+
+#### ✅ (Opsional) Reset Komentar
+
+Akses:
+
+```
+http://192.168.56.101/labserangan/reset_comments.php
+```
+
+Untuk menghapus semua komentar.
+
+---
+
+#### 🔒 Tips Tambahan (untuk nanti):
+
+Kalau kamu mau ubah ini jadi lab **dengan proteksi**:
+
+- SQL Injection: gunakan `prepare()` dan `bind_param()` seperti di `comment.php`.
+    
+- XSS: gunakan `htmlspecialchars()` atau `htmlentities()` saat menampilkan komentar.
+    
+
+Misalnya:
+
+```php
+echo "<p>" . htmlspecialchars($row['content']) . "</p>";
+```
+
+---
+
+file konfigurasi seperti di LAMP stack sistem (Ubuntu) _tidak ada_ di XAMPP**, karena **XAMPP menggunakan struktur direktori dan konfigurasi sendiri**, terpisah dari sistem default seperti:
+
+- `/etc/mysql/`
+    
+- `/etc/apache2/`
+    
+
+---
+
+## 📁 Penjelasan Detail: Struktur XAMPP vs LAMP
+
+|Tujuan Konfigurasi|Lokasi di **LAMP (apt install)**|Lokasi di **XAMPP (/opt/lampp)**|
+|---|---|---|
+|Apache config utama|`/etc/apache2/apache2.conf`|`/opt/lampp/etc/httpd.conf`|
+|Apache virtual hosts|`/etc/apache2/sites-available/000-default.conf`|`/opt/lampp/etc/extra/httpd-vhosts.conf`|
+|Apache port setting|`/etc/apache2/ports.conf`|`/opt/lampp/etc/httpd.conf`|
+|Document root (default)|`/var/www/html`|`/opt/lampp/htdocs`|
+|MySQL config utama|`/etc/mysql/mariadb.conf.d/50-server.cnf` atau `my.cnf`|`/opt/lampp/etc/my.cnf`|
+|PHP config utama|`/etc/php/8.x/apache2/php.ini`|`/opt/lampp/etc/php.ini`|
+|Log Apache|`/var/log/apache2/`|`/opt/lampp/logs/`|
+|Log MySQL|`/var/log/mysql/`|`/opt/lampp/var/mysql/`|
+
+---
+
+## 🔍 Contoh: File Konfigurasi XAMPP
+
+### 🛠 Apache di XAMPP
+
+- File utama: `/opt/lampp/etc/httpd.conf`
+    
+- Tambahan vhost: `/opt/lampp/etc/extra/httpd-vhosts.conf`
+    
+
+Untuk ubah port misalnya:
+
+```bash
+sudo nano /opt/lampp/etc/httpd.conf
+```
+
+Cari:
+
+```apache
+Listen 80
+```
+
+Ganti jadi port lain (misal 8080), dan restart XAMPP:
+
+```bash
+sudo /opt/lampp/lampp restart
+```
+
+---
+
+### 🛠 MySQL/MariaDB di XAMPP
+
+Konfigurasi di:
+
+```bash
+/opt/lampp/etc/my.cnf
+```
+
+Untuk ubah port MySQL, max_connections, dsb.
+
+---
+
+## ❗ PENTING:
+
+> Jangan edit file di `/etc/apache2/` atau `/etc/mysql/` kalau kamu pakai XAMPP. Itu adalah konfigurasi milik **Apache & MySQL sistem bawaan Ubuntu**, bukan XAMPP. XAMPP tidak menggunakannya sama sekali.
+
+---
+
+## ✅ Kesimpulan
+
+| Hal                  | Ada di XAMPP?                | Catatan                             |
+| -------------------- | ---------------------------- | ----------------------------------- |
+| `/etc/mysql/...`     | ❌ Tidak                      | Gunakan `/opt/lampp/etc/my.cnf`     |
+| `/etc/apache2/...`   | ❌ Tidak                      | Gunakan `/opt/lampp/etc/httpd.conf` |
+| PHP config `php.ini` | ✅ Ya, tapi di lokasi berbeda | Ada di `/opt/lampp/etc/php.ini`     |
+
+---
+
+Sekarang mari kita **bandingkan dengan XAMPP** apakah file seperti:
+
+- `/etc/apache2/ports.conf`
+    
+- `/etc/apache2/sites-available/000-default.conf`
+    
+- `/etc/mysql/mariadb.conf.d/50-server.cnf`
+    
+
+**ada di XAMPP? Jawaban lengkapnya:**
+
+---
+
+#### 🔍 1. `/etc/apache2/ports.conf` → **❌ TIDAK ada di XAMPP**
+
+Di XAMPP, konfigurasi **port Apache** langsung ditulis di:
+
+📁 **`/opt/lampp/etc/httpd.conf`**
+
+```apache
+Listen 80
+```
+
+Kalau ingin support VirtualHost multi-port, XAMPP juga punya file:
+
+📁 **`/opt/lampp/etc/extra/httpd-vhosts.conf`**  
+→ ini digunakan untuk mendefinisikan beberapa virtual host seperti:
+
+```apache
+<VirtualHost *:80>
+    DocumentRoot "/opt/lampp/htdocs/project1"
+    ServerName project1.local
+</VirtualHost>
+```
+
+---
+
+#### 🔍 2. `/etc/apache2/sites-available/000-default.conf` → **❌ TIDAK ada di XAMPP**
+
+Apache versi **bawaan sistem (LAMP)** menggunakan sistem `sites-available/` dan `sites-enabled/`, sedangkan **XAMPP tidak menggunakan itu.**
+
+Sebagai gantinya:
+
+📁 **`/opt/lampp/etc/httpd.conf`** (utama)  
+📁 **`/opt/lampp/etc/extra/httpd-vhosts.conf`** (untuk multiple host)
+
+Aktifkan file ini dengan menghapus komentar di `httpd.conf`:
+
+```apache
+# Include etc/extra/httpd-vhosts.conf
+↓
+Include etc/extra/httpd-vhosts.conf
+```
+
+---
+
+#### 🔍 3. `/etc/mysql/mariadb.conf.d/50-server.cnf` → **❌ TIDAK ada di XAMPP**
+
+Untuk MariaDB/MySQL di XAMPP, file konfigurasinya ada di:
+
+📁 **`/opt/lampp/etc/my.cnf`**
+
+Isi file ini mirip dengan `my.cnf` pada LAMP, contoh:
+
+```ini
+[mysqld]
+port=3306
+socket=/opt/lampp/var/mysql/mysql.sock
+datadir="/opt/lampp/var/mysql"
+bind-address=0.0.0.0
+```
+
+Kalau kamu mau:
+
+- Mengganti port MySQL
+    
+- Mengatur bind-address agar bisa diakses dari luar
+    
+- Menyesuaikan `character-set-server`, `max_connections`, dll
+    
+
+Lakukan di file ini, lalu restart XAMPP:
+
+```bash
+sudo /opt/lampp/lampp restartmysql
+```
+
+---
+
+#### 📌 Kesimpulan
+
+|File LAMP|Status di XAMPP|Pengganti di XAMPP|
+|---|---|---|
+|`/etc/apache2/ports.conf`|❌ Tidak ada|`/opt/lampp/etc/httpd.conf`|
+|`/etc/apache2/sites-available/000-default.conf`|❌ Tidak ada|`/opt/lampp/etc/extra/httpd-vhosts.conf`|
+|`/etc/mysql/mariadb.conf.d/50-server.cnf`|❌ Tidak ada|`/opt/lampp/etc/my.cnf`|
+
+---
+
+#### ✅ Tips Bonus
+
+Kalau kamu ingin mensimulasikan seolah-olah pakai struktur LAMP (misal agar dokumentasi cocok), **lebih baik gunakan LAMP asli** (`apt install apache2 mariadb php`) karena:
+
+- Struktur file lebih standar
+    
+- Konfigurasi system-wide
+    
+- Lebih cocok untuk server CLI seperti Ubuntu Server 24.04
 
 ---
 
@@ -561,6 +1026,9 @@ sudo chown -R www-data:www-data /var/www/html
 
 # Atur permission agar dapat dibaca dan dieksekusi (akses web)
 sudo chmod -R 755 /var/www/html
+
+# Untuk mengatur keamanan SELinux
+sudo apt install policycoreutils
 
 # Pulihkan konteks SELinux (khusus CentOS/RHEL/Fedora)
 sudo restorecon -Rv /var/www/html
@@ -2204,7 +2672,404 @@ Itu **berisiko sangat tinggi**. Makanya best practice: **buat user baru khusus w
 
 ---
 
-Kalau lo mau, gue bisa bantu **cek dan tunjukin permission root lo sekarang** atau bantu **buat user baru yang aman** untuk web app lo.
+✅ **Ya, sangat bisa!** Kamu bisa langsung **menjalankan file `.sql` saat login ke MySQL** dengan cara:
+
+---
+
+#### ✅ Format Umum:
+
+```bash
+mysql -u [username] -p [nama_database] < [nama_file].sql
+```
+
+#### 📌 Contoh:
+
+Misalnya kamu punya file `dump.sql` dan ingin restore ke database `labserangan` pakai user `webuser`, maka perintahnya:
+
+```bash
+mysql -u webuser -p labserangan < dump.sql
+```
+
+📝 _Setelah enter, kamu tinggal masukkan password dari `webuser`._
+
+---
+
+#### ✅ Alternatif: Jalankan Setelah Masuk
+
+Kalau kamu sudah terlanjur login ke MySQL shell:
+
+```bash
+mysql -u webuser -p
+```
+
+Lalu setelah masuk, kamu bisa gunakan perintah MySQL internal:
+
+```sql
+USE labserangan;
+SOURCE /path/ke/file.sql;
+```
+
+---
+
+#### 🔒 Catatan Penting:
+
+- Pastikan user yang kamu pakai (`webuser`) **punya hak akses** ke database tujuan (`labserangan`)
+    
+- Kalau file `.sql` kamu mencakup `CREATE DATABASE`, kamu harus login dengan user yang **boleh membuat database** (misalnya root, atau user dengan privilege `CREATE`)
+
+---
+
+✅ **Bisa banget**, **asalkan** user yang kamu pakai punya **hak akses yang cukup** untuk membuat database baru.
+
+---
+
+#### 🔍 Penjelasan Lengkap:
+
+Misalkan kamu punya file `.sql` seperti ini:
+
+```sql
+CREATE DATABASE IF NOT EXISTS labserangan;
+USE labserangan;
+
+CREATE TABLE users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(50),
+  password VARCHAR(50)
+);
+```
+
+Lalu kamu jalankan:
+
+```bash
+mysql -u webuser -p < dump.sql
+```
+
+#### Maka:
+
+- Jika `webuser` punya hak untuk **CREATE DATABASE**, semuanya berjalan lancar.
+    
+- Tapi **jika tidak**, maka kamu akan dapat error seperti:
+    
+
+```
+ERROR 1044 (42000): Access denied for user 'webuser'@'localhost' to database 'labserangan'
+```
+
+---
+
+#### 🛡 Solusi:
+
+#### ✅ 1. **Gunakan user yang punya privilege `CREATE`**
+
+Misalnya saat membuat `webuser`, kamu berikan:
+
+```sql
+GRANT ALL PRIVILEGES ON *.* TO 'webuser'@'localhost' WITH GRANT OPTION;
+```
+
+Atau kalau cuma ingin bisa buat database:
+
+```sql
+GRANT CREATE, USAGE ON *.* TO 'webuser'@'localhost';
+```
+
+> 🧠 Tapi ingat: **semakin banyak hak akses, makin besar risiko kalau webnya kena serangan.** Idealnya webuser hanya punya akses ke 1 database.
+
+---
+
+#### ✅ 2. **Pisahkan pembuatan database dan pengisian data**
+
+Misalnya:
+
+```bash
+# Langkah 1 - pakai root untuk bikin database
+mysql -u root -p -e "CREATE DATABASE labserangan;"
+
+# Langkah 2 - pakai webuser untuk restore isinya
+mysql -u webuser -p labserangan < dump.sql
+```
+
+---
+
+#### 🔚 Kesimpulan
+
+|Situasi|Bisa?|Syarat|
+|---|---|---|
+|`.sql` mengandung `CREATE DATABASE`|✅|User harus punya `CREATE` privilege|
+|`.sql` hanya isi tabel (`CREATE TABLE`)|✅|Asal database tujuan sudah ada dan user punya akses ke database itu|
+|User biasa tanpa privilege `CREATE`|❌|Gagal buat database baru dari file `.sql`|
+
+---
+
+#### ✅ 1. Maksud Perintah Restore Isi Database
+
+```bash
+mysql -u webuser -p labserangan < dump.sql
+```
+
+#### Artinya:
+
+- **User `webuser`** akan masuk ke **database `labserangan`**
+    
+- Lalu **eksekusi semua perintah SQL yang ada dalam `dump.sql`**
+    
+- Biasanya `dump.sql` berisi:
+    
+    - `CREATE TABLE`, `INSERT INTO`, `ALTER`, dsb
+        
+
+#### Jadi:
+
+✔ **Benar**, ini digunakan untuk **mengisi ulang** atau **"menimpa" isi database** (kalau struktur/tabelnya sama, datanya akan ditambah atau ditimpa tergantung isinya).
+
+> ⚠ Tapi perintah ini **tidak membuat database**. Jadi database `labserangan` **harus sudah ada** sebelumnya.
+
+---
+
+#### ✅ 2. Fungsi `-e` pada Perintah MySQL
+
+```bash
+mysql -u root -p -e "CREATE DATABASE labserangan;"
+```
+
+#### Penjelasan:
+
+- `-e` = **execute**
+    
+- Digunakan untuk **menjalankan query SQL langsung dari command line**
+    
+
+Contoh lainnya:
+
+```bash
+mysql -u root -p -e "SHOW DATABASES;"
+```
+
+#### Artinya:
+
+- Tanpa harus masuk ke **MySQL prompt interaktif**, kamu langsung **jalankan query** dari shell
+    
+
+---
+
+#### 📌 Ilustrasi Lengkap Alur Kerja
+
+```bash
+# 1. Root buat database
+mysql -u root -p -e "CREATE DATABASE labserangan;"
+
+# 2. Webuser isi database labserangan pakai dump.sql
+mysql -u webuser -p labserangan < dump.sql
+```
+
+> Ini skenario ideal: `root` punya hak buat database, `webuser` punya akses terbatas hanya ke isi database-nya.
+
+---
+
+#### ✅ Fungsi `-e` dalam `mysql -u root -p -e "..."`
+
+#### Artinya:
+
+- `-e` = **execute SQL langsung** dari shell
+    
+- Tidak masuk ke **MySQL interactive shell**
+    
+- Setelah perintah selesai, **langsung balik lagi ke shell Linux**
+    
+
+Contoh:
+
+```bash
+mysql -u root -p -e "CREATE DATABASE labserangan;"
+```
+
+- Setelah kamu masukin password root (kalau ada), maka:
+    
+    - Perintah SQL `CREATE DATABASE labserangan;` dijalankan
+        
+    - **Selesai**, dan kamu **tidak** masuk ke MySQL CLI (`mysql>`), langsung balik ke shell Linux (`$` atau `#`)
+        
+
+---
+
+#### 🔐 Cara Set atau Ubah Password User Database (`root` atau lainnya)
+
+Kalau kamu ingin **menyetel/mengubah password** user database (contoh: `root`), berikut caranya:
+
+#### 💡 Cara Modern (MySQL / MariaDB >= 10.4):
+
+```sql
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'PasswordBaru123!';
+FLUSH PRIVILEGES;
+```
+
+> **Langkah-langkah lengkap:**
+
+```bash
+sudo mysql -u root
+```
+
+Lalu di dalam shell MySQL:
+
+```sql
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'PasswordBaru123!';
+FLUSH PRIVILEGES;
+```
+
+#### 📌 Catatan:
+
+- Kalau user `root` pakai plugin `unix_socket`, maka dia **nggak pakai password**, dan login-nya cuma bisa dari shell Linux sebagai user `root`.
+    
+- Bisa dicek dengan:
+    
+
+```sql
+SELECT user, host, plugin FROM mysql.user;
+```
+
+Kalau `plugin`-nya `auth_socket` atau `unix_socket`, berarti password **tidak berlaku** untuk user itu.
+
+---
+
+#### 💡 Kalau Mau Ganti Jadi Pakai Password:
+
+```sql
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'PasswordBaru123!';
+FLUSH PRIVILEGES;
+```
+
+Lalu kamu bisa login dengan:
+
+```bash
+mysql -u root -p
+# Masukkan: PasswordBaru123!
+```
+
+---
+
+## 🧠 Singkatnya:
+
+|Hal|Penjelasan|
+|---|---|
+|`-e`|Jalankan SQL langsung, **tanpa masuk shell MySQL**|
+|Login `-p`|Prompt password **jika user pakai password login**|
+|Tidak masuk password|Kalau `ENTER` di `-p` tanpa password dan user-nya butuh password → **error**|
+|Ubah password|`ALTER USER ... IDENTIFIED BY 'password'`|
+|`unix_socket` plugin|Tidak butuh password, hanya bisa login dari shell Linux sebagai user OS yang sama|
+
+---
+
+Kalau kamu butuh cek semua user dan plugin login-nya, tinggal pakai:
+
+```sql
+SELECT user, host, plugin FROM mysql.user;
+```
+
+---
+
+#### 🔐 1. **Kalau User Database (root/webuser) Pakai Password**, Maka:
+
+#### ✅ Ini bisa:
+
+```bash
+mysql -u root -p
+# lalu diminta isi password
+```
+
+#### ❌ Tapi ini akan error:
+
+```bash
+mysql -u root
+# ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: NO)
+```
+
+Karena user root **sudah dikonfigurasi pakai password**, jadi kalau kamu nggak pakai `-p`, maka MySQL akan anggap kamu **tidak berniat memasukkan password**, dan langsung ditolak.
+
+---
+
+#### 🧠 2. **Kalau Kamu Lupa Password `root`, Gimana?**
+
+Kalau kamu lupa password user `root` MySQL/MariaDB, kamu masih bisa **reset password-nya dari OS** karena root database ≠ root Linux, **tapi bisa diakses dari root Linux**. Caranya:
+
+---
+
+#### 🔧 **Langkah Reset Password Root MySQL/MariaDB:**
+
+1. **Stop service MySQL/MariaDB**
+    
+
+```bash
+sudo systemctl stop mysql
+# atau
+sudo systemctl stop mariadb
+```
+
+2. **Jalankan MySQL tanpa otentikasi** (skip grant tables)
+    
+
+```bash
+sudo mysqld_safe --skip-grant-tables --skip-networking &
+```
+
+> Tunggu beberapa detik sampai muncul pesan `mysqld: ready for connections`.
+
+3. **Buka terminal baru** dan login tanpa password:
+    
+
+```bash
+mysql -u root
+```
+
+4. **Ganti password root:**
+    
+
+```sql
+FLUSH PRIVILEGES;
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'PasswordBaru123!';
+```
+
+> Atau jika gagal karena plugin, tambahkan ini:
+
+```sql
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'PasswordBaru123!';
+```
+
+5. **Exit dan restart normal service:**
+    
+
+```bash
+sudo systemctl restart mysql
+# atau
+sudo systemctl restart mariadb
+```
+
+6. **Coba login ulang:**
+    
+
+```bash
+mysql -u root -p
+# Masukkan: PasswordBaru123!
+```
+
+---
+
+#### 🧠 Ringkasan Praktis
+
+|Kasus|Solusi|
+|---|---|
+|Lupa password root DB|Jalankan MySQL dengan `--skip-grant-tables`, ubah password|
+|Login MySQL tanpa `-p` gagal|Artinya user DB butuh password|
+|Mau login tanpa password|Pastikan user DB **tidak punya password** dan `plugin` login-nya mendukung|
+
+---
+
+Kalau mau aman dan best practice:
+
+- Root MySQL pakai password
+    
+- Akses root hanya dari shell Linux (`sudo mysql`)
+    
+- Web pakai user baru terbatas (`webuser`), password juga diset
 
 ---
 #### 💡 FYI: Kode PHP-nya yang mengandalkan user ini

@@ -83,6 +83,7 @@ Mengetahui cara bertahan dari serangan non-etika hacker
 #### 💡 Kenapa?  
 Kita harus **matiin semua service yang gak penting**, biar **attack surface makin sempit**.  
 🔓 **Port yang kebuka = pintu masuk serangan.**
+
 **[Ubuntu]**
 ```Terminal
 # 1. Aktifkan ufw
@@ -119,6 +120,7 @@ sudo netstat -tuln
 #### 💡 Kenapa?
 - **Root** punya akses full, jangan dipakai buat harian.
 - Kita bikin user biasa + kasih dia akses `sudo` (admin level tapi ada jejaknya).
+
 **[Ubuntu]**
 ```Terminal
 # 1. Tambahkan user baru
@@ -144,6 +146,7 @@ sudo whoami   # harusnya output: root
 
 #### 💡 Kenapa?
 - Biar semua aktivitas penting ke-log: login, akses file penting, penggunaan sudo, dsb.
+
 **[Ubuntu]**
 ```Terminal
 # 1. Install auditd
@@ -169,6 +172,7 @@ sudo aureport -au  # report login attempts
 ### ✅ Bonus Step 4: Disable Root Login via SSH
 #### 💡 Kenapa?
 - Akses root langsung lewat SSH = bad practice. Gunakan user biasa + sudo
+
 **[Ubuntu]**
 ```Terminal
 sudo nano /etc/ssh/sshd_config
@@ -188,6 +192,7 @@ sudo systemctl restart ssh
 ### ✅ Bonus Step 5: Login Menggunakan SSH-Key tanpa Autentifkasi Password (Lebih Aman)
 #### 💡 Kenapa?
 - Karena kalo misalnya menggunakan password saja rawan untuk kena `brute force` password ssh untuk masuk kedalam sistem
+
 **[Kali]**
 ```Terminal
 # Disisi Client, Misal Kali Linux atau Distro Linux Lainnya
@@ -204,6 +209,7 @@ Enter passphrase (empty for no passphrase): [ENTER] atau isi kalau mau
 #### Cara Membagikan Public Key ke VM Lain: 
 Misal Client (Pembuat SSH-Key) membagikan Kunci Public Key nya ke vm lain agar Client bisa mengakses vm tersebut tanpa menggunakan Password. 
 Cara gampang:
+
 **[Kali]**
 ```Terminal
 ssh-copy-id -i ~/.ssh/id_rsa.pub username@IP-ubuntu-server
@@ -213,6 +219,7 @@ ssh-copy-id -i ~/.ssh/id_rsa.pub lksadmin@192.168.56.110
 ```
 
 #### 📌 Kalau `ssh-copy-id` gak ada, bisa manual:
+
 **[Ubuntu]**
 ```Terminal
 cat ~/.ssh/id_rsa.pub | ssh lksadmin@192.168.56.110 "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
@@ -220,6 +227,7 @@ cat ~/.ssh/id_rsa.pub | ssh lksadmin@192.168.56.110 "mkdir -p ~/.ssh && cat >> ~
 
 #### 🔧 Pastikan Permission-nya Bener di Server atau VM lain
 Login ke Ubuntu Server, lalu:
+
 **[Ubuntu]**
 ```Terminal
 chmod 700 ~/.ssh
@@ -227,6 +235,7 @@ chmod 600 ~/.ssh/authorized_keys # sesuaikan nama file enkripsinya apa didalam f
 ```
 
 #### 🔧 Edit Konfigurasi SSH di Server (Ubuntu)
+
 **[Ubuntu]**
 ```Terminal
 # Edit konfigurasi ssh
@@ -246,18 +255,22 @@ PermitRootLogin no
 ![Alt Text](image/Pengamanan_Port.png)
 
 #### ✅ Tahap 2: Membuat User
+
 ![Alt Text](image/Membuat_User.png)
 
 
 #### ✅ Tahap 3: Mengaktifkan Audit (auditd)
+
 ![Alt Text](image/Audit_2.png)
 ![Alt Text](image/Audit_3.png)
 ![Alt Text](image/Audit_1.png)
 
 #### ✅ Bonus Step 4: Disable Root Login via SSH
+
 ![Alt Text](image/disable_ssh_login.png)
 
 #### ✅ Bonus Step 5: Login Menggunakan SSH-Key tanpa Autentifkasi Password (Lebih Aman)
+
 ![Alt Text](image/ssh_key_3.png)
 ![Alt Text](image/ssh_key_2.png)
 ![Alt Text](image/ssh_key_1.png)

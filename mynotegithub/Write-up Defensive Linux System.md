@@ -551,6 +551,72 @@ sudo ./xampp-linux-x64-8.2.12-0-installer.run --mode text
 
 > Tambahkan `--mode text` agar installer berjalan dalam **mode teks (CLI)**.
 
+Berikut adalah **jawaban step-by-step** saat kamu menjalankan perintah:
+
+```bash
+sudo ./xampp-linux-x64-8.2.12-0-installer.run --mode text
+```
+
+Kamu cukup ikuti panduan ini:
+
+---
+
+#### ✅ **1. XAMPP Core Files : Y (Cannot be edited)**
+
+Artinya file inti akan terpasang, tidak bisa diubah.
+
+#### ✅ **2. XAMPP Developer Files [Y/n] :**
+
+**Jawab:** `y`  
+(Tekan Enter juga bisa karena default-nya `Y`)
+
+---
+
+#### ✅ **3. Is the selection above correct? [Y/n]:**
+
+**Jawab:** `y`  
+(atau tekan Enter)
+
+---
+
+#### ✅ **4. Installation Directory**
+
+```
+XAMPP will be installed to /opt/lampp
+Press [Enter] to continue:
+```
+
+**Jawab:** _(tekan Enter saja)_  
+(Jangan ganti path kecuali kamu tahu apa yang kamu lakukan)
+
+---
+
+#### ✅ **5. Setup is now ready to begin installing XAMPP on your computer.**
+
+**Do you want to continue? [Y/n]:**  
+**Jawab:** `y`  
+(atau tekan Enter)
+
+---
+
+Setelah itu proses instalasi akan berjalan. Jika sukses, kamu akan melihat pesan seperti:
+
+```
+Installation completed!
+```
+
+Kemudian, untuk **menjalankan XAMPP**, gunakan:
+
+```bash
+sudo /opt/lampp/lampp start
+```
+
+Dan untuk **cek status** layanan:
+
+```bash
+sudo /opt/lampp/lampp status
+```
+
 ---
 
 #### 4. **Ikuti wizard instalasi**

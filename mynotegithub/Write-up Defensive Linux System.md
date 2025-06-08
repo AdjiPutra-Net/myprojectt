@@ -528,7 +528,7 @@ Login ke server kamu dan jalankan:
 
 ```bash
 cd /tmp
-wget https://www.apachefriends.org/xampp-files/8.2.12/xampp-linux-x64-8.2.12-0-installer.run
+wget https://sourceforge.net/projects/xampp/files/XAMPP%20Linux/8.2.12/xampp-linux-x64-8.2.12-0-installer.run
 ```
 
 > Ganti link `xampp-linux-x64-8.2.12-0-installer.run` dengan versi terbaru dari [https://www.apachefriends.org/index.html](https://www.apachefriends.org/index.html) jika perlu.

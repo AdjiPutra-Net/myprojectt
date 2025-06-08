@@ -425,7 +425,7 @@ cd /usr/src/snort-2.9.20/etc/
 sudo cp *.map *.dtd /etc/snort/
 sudo ldconfig
 # mematikan offload network, supaya paket yang dikirim ke tools IDS tidak dimodifikasi oleh hardware NIC dan ini yang menyebabkan notifikasi alert IDS tidak muncul saat website sedang diserang
-sudo ethtool -K <interface-network, contoh : eth0, enp0s3 dan lain-lain> rx off tx off sg off tso off gso off gro off
+sudo ethtool -K <interface-network yang digunakan untuk menjalankan IDS disarankan jika menjalankannya di virtual machine seperti: virtualbox dan vmware adapter networknya wajib Host-only atau Bridged, contoh interface-networknya : eth0, enp0s3 dan lain-lain> rx off tx off sg off tso off gso off gro off
 ```
 
 #### 💡 Penjelasan:

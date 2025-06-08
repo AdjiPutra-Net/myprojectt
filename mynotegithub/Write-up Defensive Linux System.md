@@ -555,6 +555,9 @@ sudo restorecon -Rv /var/www/html
 # Masuk ke direktori web
 cd /var/www/html
 
+# Restart web server apache nya
+systemctl restart apache2
+
 # Buat file PHP yang dibutuhkan untuk simulasi
 touch comment.php database.sql db.php index.php login.php reset_comments.php
 ```

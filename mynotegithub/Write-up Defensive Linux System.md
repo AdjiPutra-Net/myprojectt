@@ -3072,6 +3072,7 @@ Tapi `curl` cuma nampilin source HTML-nya.
 ## 🧾 6. Hasil Pengujian IDS<a name="Hasil Pengujian IDS"></a>
 
 #### ✅ Uji Coba Menjalankan Snort untuk Mendeteksi Serangan yang Masuk pada Website:
+
 ![Alt Text](image/ids_4.png)
 ![Alt Text](image/ids_5.png)
 ![Alt Text](image/ids_7.png)

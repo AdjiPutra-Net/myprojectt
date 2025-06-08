@@ -188,7 +188,7 @@ sudo systemctl restart ssh
 ### ✅ Bonus Step 5: Login Menggunakan SSH-Key tanpa Autentifkasi Password (Lebih Aman)
 #### 💡 Kenapa?
 - Karena kalo misalnya menggunakan password saja rawan untuk kena `brute force` password ssh untuk masuk kedalam sistem
-**[Ubuntu]**
+**[Kali]**
 ```Terminal
 # Disisi Client, Misal Kali Linux atau Distro Linux Lainnya
 ssh-keygen -t rsa -b 4096
@@ -204,7 +204,7 @@ Enter passphrase (empty for no passphrase): [ENTER] atau isi kalau mau
 #### Cara Membagikan Public Key ke VM Lain: 
 Misal Client (Pembuat SSH-Key) membagikan Kunci Public Key nya ke vm lain agar Client bisa mengakses vm tersebut tanpa menggunakan Password. 
 Cara gampang:
-**[Ubuntu]**
+**[Kali]**
 ```Terminal
 ssh-copy-id -i ~/.ssh/id_rsa.pub username@IP-ubuntu-server
 

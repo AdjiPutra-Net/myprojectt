@@ -220,7 +220,7 @@ ssh-copy-id -i ~/.ssh/id_rsa.pub lksadmin@192.168.56.110
 
 #### 📌 Kalau `ssh-copy-id` gak ada, bisa manual:
 
-**[Ubuntu]**
+**[Kali]**
 ```Terminal
 cat ~/.ssh/id_rsa.pub | ssh lksadmin@192.168.56.110 "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
 ```

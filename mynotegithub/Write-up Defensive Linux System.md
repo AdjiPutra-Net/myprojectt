@@ -424,6 +424,7 @@ sudo mkdir -p /usr/local/lib/snort_dynamicrules
 cd /usr/src/snort-2.9.20/etc/
 sudo cp *.map *.dtd /etc/snort/
 sudo ldconfig
+# mematikan offload network, supaya paket yang dikirim ke tools IDS tidak dimodifikasi oleh hardware NIC dan ini yang menyebabkan notifikasi alert IDS tidak muncul saat website sedang diserang
 sudo ethtool -K <interface-network, contoh : eth0, enp0s3 dan lain-lain> rx off tx off sg off tso off gso off gro off
 ```
 
@@ -1168,6 +1169,707 @@ Berarti, **user ini bisa akses semua isi database `labserangan`**.
 
 ---
 
+#### ✅ **I. Cek Langsung di MySQL/MariaDB (Manual)**
+
+Cocok buat admin/server access.
+
+#### 1. **Lihat Semua User MySQL**
+
+Masuk ke MySQL pakai root:
+
+```bash
+mysql -u root -p
+```
+
+Lalu jalankan:
+
+```sql
+SELECT User, Host FROM mysql.user;
+```
+
+📌 Contoh output:
+
+```
++----------+-----------+
+| User     | Host      |
++----------+-----------+
+| root     | localhost |
+| webuser  | localhost |
++----------+-----------+
+```
+
+> Artinya: `webuser@localhost` itu ada.
+
+---
+
+#### 2. **Cek Hak Akses User**
+
+```sql
+SHOW GRANTS FOR 'webuser'@'localhost';
+```
+
+📌 Hasil ideal:
+
+```
+GRANT ALL PRIVILEGES ON labserangan.* TO 'webuser'@'localhost'
+```
+
+> Pastikan user ini **punya akses ke database** yang lo sebut di PHP (`labserangan`).
+
+---
+
+#### ✅ **II. Tes Koneksi Langsung dari Kodingan Web**
+
+Buat file PHP misalnya `cek_koneksi.php`:
+
+```php
+<?php
+$host = "localhost";
+$user = "webuser";       // cocokin dengan db.php
+$pass = "webpass123";    // cocokin juga
+$db   = "labserangan";   // nama database
+
+$conn = new mysqli($host, $user, $pass, $db);
+
+if ($conn->connect_error) {
+    die("❌ Koneksi GAGAL: " . $conn->connect_error);
+} else {
+    echo "✅ Koneksi BERHASIL ke database '$db' pakai user '$user'";
+}
+?>
+```
+
+#### Jalankan di browser:
+
+```
+http://192.168.56.17/cek_koneksi.php
+```
+
+Kalau sukses:
+
+> ✅ Koneksi BERHASIL ke database 'labserangan' pakai user 'webuser'
+
+Kalau gagal:
+
+> ❌ Koneksi GAGAL: Access denied for user...
+
+---
+
+#### 🔒 **Kenapa Penting Cek Sinkronisasi Ini?**
+
+| Masalah                            | Penyebab Umum                                 |
+| ---------------------------------- | --------------------------------------------- |
+| Error 500 / `mysqli_sql_exception` | Salah user/pass/db di PHP                     |
+| "Access denied"                    | User tidak dibuat atau tidak diberi hak akses |
+| "Unknown database"                 | Nama database di PHP salah atau belum dibuat  |
+| Tidak bisa query                   | User tidak punya hak `SELECT`, `INSERT`, dll  |
+
+---
+
+#### 🚀 Tips Pro
+
+- Jangan pakai user `root` untuk aplikasi web — **buat user khusus** (seperti `webuser`).
+    
+- Kalau bikin user, pastikan `GRANT` tepat:
+    
+    ```sql
+    GRANT ALL PRIVILEGES ON labserangan.* TO 'webuser'@'localhost';
+    ```
+
+---
+
+#### 🧨 Kenapa **`root`** Sering **Gagal** dan Bikin `Access Denied`?
+
+#### 🧩 1. **Plugin Autentikasi `root` BUKAN untuk Web**
+
+- Di banyak sistem modern (termasuk Ubuntu 24.04), user `root` di MariaDB atau MySQL **tidak pakai password biasa**, tapi pakai:
+    
+    ```text
+    plugin: unix_socket
+    ```
+    
+- Artinya: hanya bisa login **lewat CLI/Linux shell**, **bukan via PHP/MySQL dari aplikasi web**.
+    
+
+💥 Maka saat PHP (`mysqli`) coba login ke MySQL pakai `root`, dia ditolak:
+
+> `Access denied for user 'root'@'localhost'`
+
+---
+
+#### 🛑 2. `root` = Superuser, Gak Aman Buat Web App
+
+- `root` itu punya akses ke **semua database**
+    
+- Kalau web lo kena SQLi (injeksi), hacker bisa:
+    
+    - Drop database lain
+        
+    - Eksekusi perintah sensitif
+        
+    - Buat user baru admin
+        
+- Itu **fatal**, makanya **web app harus pakai user terbatas**
+    
+
+---
+
+#### 🔧 Solusinya = **Buat User Baru Khusus Web App**
+
+Contoh:
+
+```sql
+CREATE USER 'webuser'@'localhost' IDENTIFIED BY 'webpass123';
+GRANT ALL PRIVILEGES ON labserangan.* TO 'webuser'@'localhost';
+```
+
+Kelebihannya:
+
+- Cuma bisa akses database `labserangan`
+    
+- Bisa login dari PHP/PDO/MySQLi
+    
+- Aman & sesuai best practice DevOps/Sysadmin
+    
+
+---
+
+#### 📛 Error HTTP 500 & Fatal Error: Access Denied
+
+Itu bukan error di PHP-nya, tapi **MySQL gagal login**, lalu PHP **crash** karena tidak bisa lanjut. Maka:
+
+```php
+$conn = new mysqli("localhost", "root", "", "labserangan");
+```
+
+Kalau `root` ditolak oleh MySQL, maka akan muncul:
+
+```
+Fatal error: Uncaught mysqli_sql_exception: Access denied...
+HTTP ERROR 500
+```
+
+---
+
+#### 🧠 Kesimpulan
+
+|🔍 Hal|✅ Jawaban|
+|---|---|
+|Apakah `root` bisa dipakai di PHP?|**Tidak disarankan**, dan sering gagal di Ubuntu/MariaDB karena pakai `unix_socket`.|
+|Kenapa harus buat user baru?|Agar bisa diakses dari PHP, aman, dan punya akses terbatas.|
+|Apakah `root` harus dihindari?|**Iya, sangat disarankan.** Hanya gunakan untuk admin via CLI.|
+|Apakah bikin user baru wajib?|**Ya**, kalau lo mau akses database dari web app seperti PHP.|
+
+---
+
+Kalau mau cepat tes apakah `webuser` udah jalan:
+
+```bash
+mysql -u webuser -p
+# Masukkan: webpass123
+```
+
+Kalau bisa login dan akses database `labserangan`, berarti udah beres dan PHP lo akan jalan lancar juga.
+
+---
+
+🔥 Kode PHP (kodingan web), user database, dan setting database-nya **harus sinkron 100%**. Kalau nggak cocok, **dijamin bakal error**, biasanya kayak:
+
+- `Access denied for user`
+    
+- `Unknown database`
+    
+- `Connection refused`
+    
+- `Fatal error: Uncaught mysqli_sql_exception`
+    
+- Bahkan muncul **HTTP ERROR 500**
+    
+
+---
+
+#### ✅ 1. **Yang Harus Sinkron:**
+
+|Komponen|Harus Sama Dengan|
+|---|---|
+|`$user` di `db.php`|Nama user MySQL (misal: `webuser`) yang **benar-benar ada**|
+|`$pass` di `db.php`|Password user MySQL (misal: `webpass123`) yang **valid**|
+|`$db` di `db.php`|Nama database MySQL (misal: `labserangan`) yang sudah dibuat|
+|Host (`localhost`)|Harus cocok dengan host user-nya (`'webuser'@'localhost'`)|
+
+---
+
+#### 🔴 2. **Kalau Tidak Sinkron, Contoh Error:**
+
+### ❌ Salah Username:
+
+```php
+$conn = new mysqli("localhost", "salahuser", "webpass123", "labserangan");
+```
+
+❗ Akan error:
+
+> `Access denied for user 'salahuser'@'localhost'`
+
+---
+
+#### ❌ Salah Password:
+
+```php
+$conn = new mysqli("localhost", "webuser", "SALAH", "labserangan");
+```
+
+❗ Akan error:
+
+> `Access denied for user 'webuser'@'localhost' (using password: YES)`
+
+---
+
+#### ❌ Salah Nama Database:
+
+```php
+$conn = new mysqli("localhost", "webuser", "webpass123", "lab_salah");
+```
+
+❗ Akan error:
+
+> `Unknown database 'lab_salah'`
+
+---
+
+#### ❌ Salah Host (jarang tapi bisa kejadian)
+
+Kalau user-nya dibuat untuk host selain `localhost`, bisa gagal login juga:
+
+```sql
+CREATE USER 'webuser'@'%' IDENTIFIED BY 'webpass123';
+```
+
+Tapi di PHP pakai `"localhost"` → bisa ditolak kalau user hanya diset untuk `'%'`.
+
+---
+
+#### ✅ Cara Pastikan Semua Sinkron:
+
+1. **Cek user yang dibuat di MySQL:**
+    
+    ```sql
+    SELECT User, Host FROM mysql.user;
+    ```
+    
+2. **Cek hak akses user:**
+    
+    ```sql
+    SHOW GRANTS FOR 'webuser'@'localhost';
+    ```
+    
+3. **Cek apakah user bisa akses databasenya:**
+    
+    ```bash
+    mysql -u webuser -p
+    # lalu di dalam mysql:
+    USE labserangan;
+    ```
+    
+4. **Pastikan di `db.php` cocok:**
+    
+    ```php
+    $host = "localhost";
+    $user = "webuser";
+    $pass = "webpass123";
+    $db   = "labserangan";
+    ```
+    
+
+---
+
+#### 🧠 Intinya
+
+**Ibarat login ke akun:**  
+Kalau kamu salah username, password, atau tujuan (nama database), ya jelas ditolak sistemnya.
+
+Maka semua ini **harus sinkron** antara:
+
+```
+Web (PHP) ↔ User MySQL ↔ Password ↔ Nama Database ↔ Hostname
+```
+
+---
+
+#### ✅ **Kalau Lo Bisa Login ke MySQL Cuma Tekan Enter (tanpa isi password)**
+
+Artinya:  
+**User `root` tidak pakai password ATAU login pakai plugin `unix_socket`**, bukan pakai password biasa.
+
+---
+
+#### 🔍 Cara Kerja Plugin `unix_socket`
+
+Di banyak distro Linux modern (terutama Ubuntu), MariaDB/MySQL **mengatur user `root`** supaya:
+
+- Login ke MySQL cukup dengan user `root` Linux (tanpa password)
+    
+- Tapi **hanya bisa dilakukan dari shell (terminal CLI)**, **bukan dari PHP atau aplikasi lain**
+    
+
+📌 **Cek plugin-nya:**
+
+```sql
+SELECT user, host, plugin FROM mysql.user;
+```
+
+Contoh output:
+
+```
++------+-----------+-----------------------+
+| user | host      | plugin                |
++------+-----------+-----------------------+
+| root | localhost | unix_socket           |
+| ...  | ...       | mysql_native_password |
++------+-----------+-----------------------+
+```
+
+Kalau `root` pakai plugin `unix_socket`, maka:
+
+- Lo bisa login tanpa password lewat terminal.
+    
+- Tapi PHP/MySQL client (dari web) bakal **gagal login** → `Access denied`.
+    
+
+---
+
+#### 🧪 Bukti Nyata Kasus Lo
+
+```bash
+mysql -u root -p
+# [lo tekan Enter tanpa ketik password]
+```
+
+Dan kalau lo **berhasil login**, artinya:
+
+- **`root` tidak pakai password** (`authentication_string` kosong)
+    
+- **ATAU** user `root` masih pakai `unix_socket`
+    
+
+Itu juga **penyebab kenapa `db.php` lo gagal konek pakai user root** dari PHP — karena PHP gak bisa pakai `unix_socket`.
+
+---
+
+#### 🔐 Solusi Umum
+
+### ✅ Solusi 1 (Recommended): **Buat User Baru**
+
+Karena lebih aman dan fleksibel:
+
+```sql
+CREATE USER 'webuser'@'localhost' IDENTIFIED BY 'webpass123';
+GRANT ALL PRIVILEGES ON labserangan.* TO 'webuser'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+Lalu pakai `webuser` di `db.php`.
+
+---
+
+#### ✅ Solusi 2: **Ubah Plugin `root` ke `mysql_native_password`**
+
+Kalau lo mau pakai `root` juga bisa, tapi:
+
+```sql
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'admin123';
+FLUSH PRIVILEGES;
+```
+
+Setelah itu, `root` bisa login pakai password **dari mana pun**, termasuk PHP.
+
+⚠️ Tapi ini **tidak disarankan untuk web production**, karena root = superuser.
+
+---
+
+#### 🔚 Kesimpulan
+
+|Situasi|Arti|
+|---|---|
+|Bisa login tanpa isi password|`root` pakai plugin `unix_socket` atau password kosong|
+|Web gagal konek pakai `root`|Karena PHP gak bisa autentikasi `unix_socket`|
+|Solusi aman|Buat user baru khusus web (`webuser`)|
+|Alternatif (tidak disarankan)|Ubah plugin `root` ke `mysql_native_password` dan set password|
+
+---
+
+#### 🧩 **Apa Itu Semua dan Bagaimana Kaitannya?**
+
+#### 🔹 `mysql -u root`
+
+Perintah untuk login ke MySQL/MariaDB sebagai user `root`.  
+Tapi kalau `root` **punya password**, maka login ini **akan gagal**.
+
+#### 🔹 `mysql -u root -p`
+
+Ini versi **dengan password prompt**.  
+Setelah lo pencet Enter, dia bakal minta lo masukin password.
+
+✅ **Wajib digunakan kalau user `root` sudah pakai password.**
+
+---
+
+#### ❌ Kenapa `mysql -u root` Gagal?
+
+Alasan umum:
+
+- User `root` **sudah punya password**
+    
+- Atau root di-set pakai **plugin `unix_socket`**, bukan `mysql_native_password`
+    
+- Atau permission MySQL-nya **belum diatur dengan benar**
+    
+
+Jadi ketika lo akses:
+
+```php
+$conn = new mysqli("localhost", "root", "", "labserangan");
+```
+
+Tapi root punya password atau plugin-nya beda, maka lo dapet:
+
+> `Access denied for user 'root'@'localhost'`
+
+---
+
+#### 🧑‍💻 Apa Itu User Baru di MySQL/MariaDB?
+
+User baru itu:
+
+```sql
+CREATE USER 'webuser'@'localhost' IDENTIFIED BY 'webpass123';
+```
+
+Artinya lo bikin **user khusus** yang:
+
+- Cuma bisa akses dari `localhost`
+    
+- Punya password terpisah dari `root`
+    
+- Bisa diatur hak aksesnya hanya ke database tertentu (misal `labserangan`)
+    
+
+---
+
+#### 🔗 Hubungan dengan `mysql -u root` dan `mysql -u root -p`
+
+- `mysql -u root` → lo masuk ke MySQL sebagai **superadmin**
+    
+- `webuser` → user biasa yang hanya dikasih akses ke 1 database (`labserangan`)
+    
+- `db.php` web lo seharusnya **pakai `webuser`**, **bukan `root`**, karena:
+    
+    - Lebih aman (least privilege)
+        
+    - Menghindari risiko rusak database lain
+        
+    - Lebih profesional
+        
+
+---
+
+#### 🤔 Kenapa Harus Buat User Baru? Kenapa Gak Pakai Root?
+
+#### ❌ Alasan GAK BOLEH pakai root:
+
+1. **Security Risk Tinggi**  
+    Kalau aplikasi web lo kebobolan (misal XSS/SQLi), hacker bisa kontrol **semua database** lewat `root`.
+    
+2. **Tidak Terhubung ke Web Server Secara Default**  
+    Kadang plugin `root` di MySQL pakai `unix_socket`, artinya:
+    
+    - Cuma bisa login via CLI, **bukan lewat PHP**
+        
+    - Maka `db.php` akan gagal login
+        
+3. **Best Practice SysAdmin**  
+    Sama kayak lo gak kasih password root ke programmer.
+    
+
+---
+
+#### ⚠️ ERROR 500 dan `Access Denied for user 'root'@'localhost'`
+
+Berarti:
+
+- Web PHP lo di `db.php` gagal konek ke MySQL
+    
+- Karena user `root`:
+    
+    - Salah password
+        
+    - Gak boleh akses via socket PHP
+        
+    - Belum diatur `plugin = 'mysql_native_password'`
+        
+
+Solusinya?  
+✅ **Pakai user baru seperti `webuser`** yang memang dirancang buat web lo.
+
+---
+
+#### 🔐 Kesimpulan dan Rangkuman
+
+|Topik|Penjelasan|
+|---|---|
+|`mysql -u root`|Login ke MySQL tanpa password. Gagal jika root punya password.|
+|`mysql -u root -p`|Login ke MySQL dengan password. Aman.|
+|Kenapa `root` gagal|Karena plugin auth salah, password salah, atau akses via PHP ditolak.|
+|User baru (`webuser`)|Solusi aman untuk web app, hanya punya akses ke DB tertentu.|
+|Kenapa gak pakai root|Karena risiko security besar, plugin gak cocok, dan bukan best practice.|
+|Error 500 / Access Denied|Artinya `db.php` gagal konek ke MySQL karena user/password salah.|
+
+---
+
+#### 🧑‍💻 **User database (`webuser`, dll) itu masuknya ke mana?**
+
+#### ✅ **Jawaban Singkat:**
+
+> **User database cuma masuk di kodingan web** (misalnya di `db.php` PHP).  
+> **Dia gak masuk ke dalam SQL script (dump struktur atau isi database).**
+
+---
+
+#### 💡 Penjelasan Lebih Detail:
+
+#### 🔹 1. **Di Kodingan Web (PHP, Python, Node.js, dsb)**
+
+User database (`webuser`, `admin123`, dll) digunakan **hanya di kode koneksi ke database**.
+
+Contoh `db.php`:
+
+```php
+<?php
+$conn = new mysqli("localhost", "webuser", "webpass123", "labserangan");
+?>
+```
+
+📌 Artinya:
+
+- Web lo bakal login ke MySQL sebagai `webuser`
+    
+- User ini harus **sudah dibuat di MySQL**, dan punya hak akses ke `labserangan`
+    
+
+---
+
+#### 🔹 2. **Di SQL Script (misal `labserangan.sql` dump dari mysqldump)**
+
+Contoh isi:
+
+```sql
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50),
+    password VARCHAR(100)
+);
+
+INSERT INTO users (username, password) VALUES ('admin', '123');
+```
+
+📌 Yang masuk ke SQL:
+
+- Struktur tabel
+    
+- Isi data
+    
+- Constraint, trigger, dsb
+    
+
+🚫 **Tapi TIDAK akan ada:**
+
+- `CREATE USER`
+    
+- `GRANT`
+    
+- Data username/password MySQL (kayak `webuser`)
+    
+
+Kecuali lo export pakai `--all-databases --routines --triggers --events`, dan export user & privilege manual dari `mysql.user`, **user database tetap gak akan ikut ke SQL file dump biasa**.
+
+---
+
+#### 🧩 **Perbandingan Ringkas**
+
+|Lokasi|Fungsi|Contoh|
+|---|---|---|
+|**Kodingan Web**|Koneksi ke MySQL pakai user tertentu|`mysqli("localhost", "webuser", "pass", "db")`|
+|**SQL Script**|Isi dan struktur database|Tabel, kolom, data, tapi **tanpa user MySQL**|
+|**MySQL server**|Menyimpan user + akses kontrol (`mysql.user`)|`webuser` bisa akses `labserangan` saja|
+
+---
+
+#### ✅ Jadi Kesimpulannya:
+
+1. **User database (`webuser`) cuma dipakai di kodingan web.**
+    
+2. **Gak muncul di SQL script biasa** kayak file `labserangan.sql`.
+    
+3. **Wajib dibuat manual** lewat MySQL (via `CREATE USER` dan `GRANT`).
+    
+
+---
+
+Kalau lo export-import database ke server lain, lo tetap harus **buat ulang user database** dan atur hak aksesnya. Karena user MySQL disimpan terpisah dari data tiap DB (ada di database internal `mysql.user`).
+
+---
+
+
+> **Tiga entitas utama**:
+
+1. 🔹 **Kodingan Web** → HTML, CSS, JS, PHP
+    
+2. 🔹 **Kodingan Database** → SQL (struktur, relasi, isi data)
+    
+3. 🔹 **User Database** → Akun akses (otentikasi ke MySQL)
+    
+
+Mereka ini **berbeda dunia**, tapi harus:
+
+- **Sinkron**
+    
+- **Berkomunikasi dengan benar**
+    
+- **Punya trust yang terjaga**
+    
+
+#### Dan kalau ini semua **klik satu sama lain**, jadilah:
+
+> ⚙️ **Sistem Web yang powerful, dinamis, dan aman.**
+
+---
+
+#### 🧠 Analogi Biar Makin Nempel:
+
+Bayangin sistem web itu kayak **tim sepak bola**:
+
+|Peran|Penjelasan|
+|---|---|
+|⚽ Web Code (PHP)|Pemain tengah – dia yang mengatur aliran bola, butuh akses ke database|
+|🧠 SQL / DB Structure|Pelatih strategi – nentuin formasi (tabel, relasi, isi data)|
+|🔐 User DB (webuser)|ID Card pemain – bisa main atau nggak tergantung izin dan trust-nya|
+
+Kalau salah satu kacau (izin ditolak, strategi rusak, pemain salah posisi), **tim gagal main.**
+
+---
+
+#### 💎 Penutup: Lo Udah di Jalur yang Benar
+
+Pemahaman kayak gini bukan cuma bikin lo jago ngoding, tapi juga:
+
+- Paham keamanan (misal least privilege, privilege escalation)
+    
+- Bisa troubleshooting error `Access denied`, `HTTP 500`, dll
+    
+- Bisa bangun sistem **profesional dan scalable**
+
+---
+
 #### 💡 FYI: Kode PHP-nya yang mengandalkan user ini
 
 ```php
@@ -1181,6 +1883,8 @@ $conn = new mysqli($host, $user, $pass, $db);
 ```
 
 Kalau `webuser` belum dibuat di MySQL/MariaDB atau salah password/akses, maka PHP lo akan error.
+
+---
 
 ### Konfigurasi Snort dan Rules 
 

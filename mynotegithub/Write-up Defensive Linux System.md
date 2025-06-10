@@ -6,8 +6,8 @@
 
 <p align="center">
   <strong>Dibuat oleh:</strong> <em>Adji Putra</em> <br>
-  <strong>Tanggal Dibuat:</strong> <em>6 Juni 2025</em> <br>
-  <strong>Tanggal Selesai:</strong> <em>6 Juni 2025</em> <br>
+  <strong>Tanggal Dibuat:</strong> <em>11 Juni 2025</em> <br>
+  <strong>Tanggal Selesai:</strong> <em>11 Juni 2025</em> <br>
 </p>
 
 <hr>
@@ -437,6 +437,7 @@ sudo mkdir -p /usr/local/lib/snort_dynamicrules
 cd /usr/src/snort-2.9.20/etc/
 sudo cp *.map *.dtd /etc/snort/
 sudo ldconfig
+
 # mematikan offload network, supaya paket yang dikirim ke tools IDS tidak dimodifikasi oleh hardware NIC dan ini yang menyebabkan notifikasi alert IDS tidak muncul saat website sedang diserang
 sudo ethtool -K <interface-network yang digunakan untuk menjalankan IDS disarankan jika menjalankannya di virtual machine seperti: virtualbox dan vmware adapter networknya wajib Host-only atau Bridged, contoh interface-networknya : eth0, enp0s3 dan lain-lain> rx off tx off sg off tso off gso off gro off
 ```
@@ -1529,6 +1530,7 @@ sudo apt install policycoreutils -y
 
 # Tahap penginstallan xampp nya
 cd /tmp
+sudo apt update -y
 wget https://sourceforge.net/projects/xampp/files/XAMPP%20Linux/8.2.12/xampp-linux-x64-8.2.12-0-installer.run
 ```
 
@@ -1552,18 +1554,181 @@ sudo ./xampp-linux-x64-8.2.12-0-installer.run --mode text
 # Pulihkan konteks SELinux (khusus CentOS/RHEL/Fedora)
 sudo restorecon -Rv /opt/lampp/htdocs
 
+# jalankan xampp (apache webserver, mysql/mariadb database)
+sudo /opt/lampp/lampp start
+
+# cek status xampp (apache webserver, mysql/mariadb database)
+sudo /opt/lampp/lampp status
+
 # Masuk kedalam direktori /opt/lampp/htdocs/labserangan untuk mengatur konifigurasi web server apache di xampp dan buat file kodingan web, database, user database 
-sudo mkdir /opt/lampp/htdocs/labserangan
+sudo mkdir -p /opt/lampp/htdocs/labserangan
 cd /opt/lampp/htdocs/labserangan
 
 # Buat file PHP yang dibutuhkan untuk simulasi dan ganti owner folder nya, lalu isikan semua file yang telah dibuat sesuai dengan yang ditujukan
 touch comment.php database.sql db.php index.php login.php reset_comments.php
 sudo chown -R daemon:daemon /opt/lampp/htdocs/labserangan
 
+# comment.php
+cat << EOF > comment.php
+<?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+include "db.php";
+
+$comment = $_POST['comment'];
+
+// Tidak disanitasi = rawan XSS
+$stmt = $conn->prepare("INSERT INTO comments (content) VALUES (?)");
+$stmt->bind_param("s", $comment);
+$stmt->execute();
+
+header("Location: index.php");
+?>
+EOF
+
+# database.sql dan user database webuser
+cat << EOF > database.sql
+CREATE DATABASE IF NOT EXISTS labserangan;
+USE labserangan;
+
+CREATE TABLE users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(100),
+  password VARCHAR(100)
+);
+
+CREATE TABLE comments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  content TEXT
+);
+
+-- Tambahkan 1 akun dummy
+INSERT INTO users (username, password) VALUES ('admin', 'admin123');
+
+-- 2. Buat user baru dengan password
+CREATE USER 'webuser'@'localhost' IDENTIFIED BY 'webpass123';
+
+-- 3. Kasih user ini akses penuh ke database `labserangan`
+GRANT ALL PRIVILEGES ON labserangan.* TO 'webuser'@'localhost';
+
+-- 4. Terapkan perubahan hak akses
+FLUSH PRIVILEGES;
+EOF
+
+# db.php
+cat << EOF > db.php
+<?php
+$host = "localhost";
+$user = "webuser";      // ganti dari root
+$pass = "webpass123";   // password yang tadi buat
+$db   = "labserangan";
+
+$conn = new mysqli($host, $user, $pass, $db);
+if ($conn->connect_error) {
+  die("Koneksi gagal: " . $conn->connect_error);
+}
+?>
+EOF
+
+# index.php
+cat << EOF > index.php
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Simulasi SQLi & XSS</title>
+  <style>
+    body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
+    .box { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+    input, textarea { width: 100%; margin: 5px 0; padding: 8px; }
+    button { padding: 10px 15px; background: #007BFF; color: white; border: none; }
+  </style>
+</head>
+<body>
+
+  <h1>🔐 Simulasi SQL Injection</h1>
+  <div class="box">
+    <form action="login.php" method="POST">
+      <input type="text" name="username" placeholder="Username" required>
+      <input type="password" name="password" placeholder="Password" required>
+      <button type="submit">Login</button>
+    </form>
+  </div>
+
+  <h1>💬 Simulasi XSS Komentar</h1>
+  <div class="box">
+    <form action="comment.php" method="POST">
+      <textarea name="comment" placeholder="Ketik komentar (bisa <script>)" required></textarea>
+      <button type="submit">Kirim</button>
+    </form>
+  </div>
+
+  <div class="box">
+    <h2>Komentar Sebelumnya:</h2>
+    <?php
+    include "db.php";
+    $result = $conn->query("SELECT content FROM comments ORDER BY id DESC");
+    while ($row = $result->fetch_assoc()) {
+      echo "<p>" . $row['content'] . "</p>";
+    }
+    ?>
+  </div>
+
+</body>
+</html>
+EOF
+
+# login.php
+cat << EOF > login.php
+<?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+include "db.php";
+
+$username = $_POST['username'];
+$password = $_POST['password'];
+
+// Rawan SQL Injection karena query langsung digabung string
+$query = "SELECT * FROM users WHERE username = '$username' AND password = '$password'";
+$result = $conn->query($query);
+
+if ($result && $result->num_rows > 0) {
+  echo "<h2 style='color: green;'>✅ Login Berhasil!</h2>";
+} else {
+  echo "<h2 style='color: red;'>❌ Login Gagal</h2>";
+}
+echo "<a href='index.php'>Kembali</a>";
+?>
+EOF
+
+# reset_comments.php
+cat << EOF > reset_comments.php
+<?php
+include "db.php";
+$conn->query("DELETE FROM comments");
+echo "Komentar dihapus.";
+?>
+EOF
 
 # Masukkan file database.sql kedalam databse mysql/mariadb kita
 # kalo usernya punya password masukan juga passwordnya kalo tidak langsung enter saja dan proses import file database.sql sudah masuk kedalam database kita
 sudo /opt/lampp/bin/mysql -u root -p < database.sql
+
+# pastikan dulu sebelum diubah, bisa pakai grep dulu:
+# ✅ Ubah Listen 80 jadi Listen 0.0.0.0:80 di baris 52:
+# ✅ Aktifin baris Include httpd-vhosts.conf di baris 488:
+# ✅ Tambah bind-address=0.0.0.0 setelah baris [mysqld]
+grep -n 'Include etc/extra/httpd-vhosts.conf' /opt/lampp/etc/httpd.conf
+grep -n '^Listen' /opt/lampp/etc/httpd.conf
+sed -i 's|^Listen 80|Listen 0.0.0.0:80|' /opt/lampp/etc/httpd.conf
+sed -i 's|^#Include etc/extra/httpd-vhosts.conf|Include etc/extra/httpd-vhosts.conf|' /opt/lampp/etc/httpd.conf
+sed -i '/^\[mysqld\]/a bind-address=0.0.0.0' /opt/lampp/etc/my.cnf
+
+
+# restart xampp (apache webserver, mysql/mariadb database)
+sudo /opt/lampp/lampp restart
 ```
 
 > Tambahkan `--mode text` agar installer berjalan dalam **mode teks (CLI)**.
@@ -2091,16 +2256,16 @@ file konfigurasi seperti di LAMP stack sistem (Ubuntu) _tidak ada_ di XAMPP**, k
 
 ## 📁 Penjelasan Detail: Struktur XAMPP vs LAMP
 
-|Tujuan Konfigurasi|Lokasi di **LAMP (apt install)**|Lokasi di **XAMPP (/opt/lampp)**|
-|---|---|---|
-|Apache config utama|`/etc/apache2/apache2.conf`|`/opt/lampp/etc/httpd.conf`|
-|Apache virtual hosts|`/etc/apache2/sites-available/000-default.conf`|`/opt/lampp/etc/extra/httpd-vhosts.conf`|
-|Apache port setting|`/etc/apache2/ports.conf`|`/opt/lampp/etc/httpd.conf`|
-|Document root (default)|`/var/www/html`|`/opt/lampp/htdocs`|
-|MySQL config utama|`/etc/mysql/mariadb.conf.d/50-server.cnf` atau `my.cnf`|`/opt/lampp/etc/my.cnf`|
-|PHP config utama|`/etc/php/8.x/apache2/php.ini`|`/opt/lampp/etc/php.ini`|
-|Log Apache|`/var/log/apache2/`|`/opt/lampp/logs/`|
-|Log MySQL|`/var/log/mysql/`|`/opt/lampp/var/mysql/`|
+| Tujuan Konfigurasi      | Lokasi di **LAMP (apt install)**                        | Lokasi di **XAMPP (/opt/lampp)**         |
+| ----------------------- | ------------------------------------------------------- | ---------------------------------------- |
+| Apache config utama     | `/etc/apache2/apache2.conf`                             | `/opt/lampp/etc/httpd.conf`              |
+| Apache virtual hosts    | `/etc/apache2/sites-available/000-default.conf`         | `/opt/lampp/etc/extra/httpd-vhosts.conf` |
+| Apache port setting     | `/etc/apache2/ports.conf`                               | `/opt/lampp/etc/httpd.conf`              |
+| Document root (default) | `/var/www/html`                                         | `/opt/lampp/htdocs`                      |
+| MySQL config utama      | `/etc/mysql/mariadb.conf.d/50-server.cnf` atau `my.cnf` | `/opt/lampp/etc/my.cnf`                  |
+| PHP config utama        | `/etc/php/8.x/apache2/php.ini`                          | `/opt/lampp/etc/php.ini`                 |
+| Log Apache              | `/var/log/apache2/`                                     | `/opt/lampp/logs/`                       |
+| Log MySQL               | `/var/log/mysql/`                                       | `/opt/lampp/var/mysql/`                  |
 
 ---
 

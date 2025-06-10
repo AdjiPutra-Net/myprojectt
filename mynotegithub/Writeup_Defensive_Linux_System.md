@@ -27,8 +27,11 @@
   <li><a href="#Pengujian Hardening">Pengujian Hardening</a></li>
   <li><a href="#Hasil Pengujian Hardening">Hasil Pengujian Hardening</a></li>
   <li><a href="#Analisa Intrusion Detection System (IDS) - Snort">Analisa Intrusion Detection System (IDS) - Snort</a></li>
-  <li><a href="#Pengujian Snort">Pengujian Snort</a></li>
+  <li><a href="#Pengujian Snort">Pengujian IDS</a></li>
   <li><a href="#Hasil Pengujian IDS">Hasil Pengujian IDS</a></li>
+  <li><a href="#OpenVPN">OpenVPN</a></li>
+  <li><a href="#Pengujian OpenVPN">Pengujian OpenVPN</a></li>
+  <li><a href="#Hasil Pengujian OpenVPN">Hasil Pengujian OpenVPN</a></li>
   <li><a href="#kesimpulan">Kesimpulan</a></li>
   <li><a href="#lampiran">Lampiran</a></li>
 </ol>
@@ -5871,7 +5874,7 @@ Tapi `curl` cuma nampilin source HTML-nya.
 
 ---
 
-## 🧾 6. Hasil Pengujian IDS<a name="Hasil Pengujian IDS"></a>
+## 🧾 9. Hasil Pengujian IDS<a name="Hasil Pengujian IDS"></a>
 
 #### ✅ Uji Coba Menjalankan Snort untuk Mendeteksi Serangan yang Masuk pada Website:
 
@@ -5881,6 +5884,737 @@ Tapi `curl` cuma nampilin source HTML-nya.
 ![Alt Text](image/ids_6.png)
 
 ---
+
+## 📡 10. OpenVPN<a name="OpenVPN"></a>
+
+Menghubungkan OpenVPN di Ubuntu Server pada Client (Host Windows)
+
+
+## 🧾 11. Pengujian OpenVPN<a name="Pengujian OpenVPN"></a>
+
+### 🚨 Install OpenVPN di Ubuntu Server 24.04.2 LTS
+
+**versi lengkap dan detail** dari **instalasi dan persiapan OpenVPN di Ubuntu Server 24.04.2 LTS**, agar lancar baik saat instalasi maupun saat dijalankan, khususnya buat kamu yang pakai VirtualBox dengan **host-only** dan **bridged adapter** untuk uji koneksi dari Windows sebagai klien.
+
+---
+
+#### ✅ 1. Update Sistem
+
+Update paket agar semua repositori dan sistem up-to-date:
+
+```bash
+sudo apt update && sudo apt upgrade -y
+```
+
+---
+
+#### ✅ 2. Install OpenVPN dan Easy-RSA
+
+Ubuntu 24.04 sudah punya paket `openvpn` dan `easy-rsa` di repo resmi:
+
+```bash
+sudo apt install openvpn easy-rsa -y
+```
+
+Paket ini juga akan otomatis menarik dependensi:
+
+- `openssl`, `libssl`: TLS/SSL
+    
+- `lzo`, `lz4`: kompresi data
+    
+- `iptables`, `nftables`: NAT & routing
+    
+- `pkcs11-helper`, `libtirpc`: tambahan autentikasi/token support
+    
+
+---
+
+#### ✅ 3. Install Utility Tambahan (Opsional Tapi Disarankan)
+
+```bash
+sudo apt install net-tools iproute2 curl wget unzip tar firewalld -y
+```
+
+- `net-tools`: ifconfig, netstat, dll.
+    
+- `iproute2`: untuk `ip`, `ss`, dll.
+    
+- `firewalld`: manajemen firewall lebih mudah.
+    
+- `curl`, `wget`, `unzip`, `tar`: bantu download & ekstrak config/certs.
+    
+
+---
+
+#### ✅ 4. Aktifkan Kernel Module TUN/TAP
+
+Pastikan interface virtual TUN aktif:
+
+```bash
+lsmod | grep tun
+```
+
+Kalau kosong, load manual:
+
+```bash
+sudo modprobe tun
+```
+
+Lalu pastikan modul selalu aktif:
+
+```bash
+echo 'tun' | sudo tee -a /etc/modules
+```
+
+---
+
+#### ✅ 5. Setup Easy-RSA dan Buat Sertifikat
+
+```bash
+make-cadir ~/openvpn-ca
+cd ~/openvpn-ca
+```
+
+Inisialisasi PKI:
+
+```bash
+./easyrsa init-pki
+./easyrsa build-ca
+```
+
+Generate request dan key server:
+
+```bash
+./easyrsa gen-req server nopass
+./easyrsa sign-req server server
+```
+
+Generate Diffie-Hellman:
+
+```bash
+./easyrsa gen-dh
+```
+
+Generate TLS key untuk Hardening:
+
+```bash
+openvpn --genkey --secret ta.key
+```
+
+---
+
+#### ✅ 6. Salin Semua File ke Direktori OpenVPN
+
+```bash
+sudo cp pki/ca.crt pki/private/server.key pki/issued/server.crt ta.key pki/dh.pem /etc/openvpn/server/
+```
+
+---
+
+#### ✅ 7. Buat File Konfigurasi Server
+
+Contoh dasar file config:
+
+```bash
+sudo nano /etc/openvpn/server/server.conf
+```
+
+Isi contoh config minimal:
+
+```conf
+port 1194
+proto udp
+dev tun
+ca ca.crt
+cert server.crt
+key server.key
+dh dh.pem
+auth SHA256
+tls-auth ta.key 0
+topology subnet
+server 10.8.0.0 255.255.255.0
+push "redirect-gateway def1 bypass-dhcp"
+push "dhcp-option DNS 8.8.8.8"
+keepalive 10 120
+cipher AES-256-CBC
+persist-key
+persist-tun
+status openvpn-status.log
+verb 3
+```
+
+---
+
+#### ✅ 8. Aktifkan IP Forwarding
+
+```bash
+echo 'net.ipv4.ip_forward=1' | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
+```
+
+---
+
+#### ✅ 9. Konfigurasi NAT dengan iptables
+
+Ganti `enp0s3` dengan interface jaringan ke internet kamu (cek dengan `ip a`):
+
+```bash
+sudo iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o enp0s3 -j MASQUERADE
+```
+
+Biar persistent:
+
+```bash
+sudo apt install iptables-persistent -y
+sudo netfilter-persistent save
+```
+
+---
+
+#### ✅ 10. Konfigurasi Firewall
+
+```bash
+sudo systemctl enable firewalld
+sudo systemctl start firewalld
+
+sudo firewall-cmd --add-port=1194/udp --permanent
+sudo firewall-cmd --add-masquerade --permanent
+sudo firewall-cmd --reload
+```
+
+---
+
+#### ✅ 11. Start dan Enable OpenVPN
+
+```bash
+sudo systemctl enable openvpn-server@server
+sudo systemctl start openvpn-server@server
+```
+
+Cek status:
+
+```bash
+sudo systemctl status openvpn-server@server
+```
+
+---
+
+#### ✅ 12. Buat Client Certificate (dari ~/openvpn-ca)
+
+```bash
+cd ~/openvpn-ca
+./easyrsa gen-req client1 nopass
+./easyrsa sign-req client client1
+```
+
+Salin file ke direktori client config:
+
+```bash
+mkdir -p ~/client-configs/keys
+cp pki/issued/client1.crt pki/private/client1.key pki/ca.crt ta.key ~/client-configs/keys/
+```
+
+---
+
+#### ✅ 13. Buat File `.ovpn` untuk Client (Windows)
+
+```bash
+mkdir -p ~/client-configs/files
+nano ~/client-configs/files/client1.ovpn
+```
+
+Isi `.ovpn` file:
+
+```conf
+client
+dev tun
+proto udp
+remote [IP_Public_atau_Bridged_IP_Server] 1194
+resolv-retry infinite
+nobind
+persist-key
+persist-tun
+remote-cert-tls server
+auth SHA256
+cipher AES-256-CBC
+verb 3
+key-direction 1
+
+<ca>
+...isi dari ca.crt...
+</ca>
+<cert>
+...isi dari client1.crt...
+</cert>
+<key>
+...isi dari client1.key...
+</key>
+<tls-auth>
+...isi dari ta.key...
+</tls-auth>
+```
+
+**NOTE:** File ini bisa langsung dikopi ke Windows Client dan dipakai di OpenVPN GUI.
+
+---
+
+#### ✅ 14. Koneksi Antar VM dan Host
+
+- **Bridged Adapter** di Ubuntu Server = dapat IP real dari router, bisa diakses Windows Host.
+    
+- **Host-Only Adapter** = akses lokal VM-host, cocok buat test tanpa koneksi luar.
+    
+
+**Pastikan Windows Host:**
+
+- Sudah install OpenVPN GUI.
+    
+- File `.ovpn` disimpan di `C:\Users\<username>\OpenVPN\config\`.
+    
+- Jalankan OpenVPN GUI sebagai Administrator.
+    
+
+---
+
+#### ✅ Ringkasan Paket yang Diinstall di Ubuntu Server 24.04.2
+
+```bash
+sudo apt update && sudo apt install openvpn easy-rsa iptables-persistent \
+    firewalld curl wget unzip tar net-tools iproute2 -y
+```
+
+---
+
+Mari kita bahas **kapan kamu butuh NAT (MASQUERADE)** dan kapan **nggak perlu**.
+
+---
+
+#### 🎯 **Kenapa `iptables -t nat -A POSTROUTING` dipakai?**
+
+Rule ini bikin **client OpenVPN bisa akses internet** lewat VPN server (VPN Gateway), dengan cara **mengubah source IP client menjadi IP server**. Ini disebut **Source NAT (SNAT)** atau **MASQUERADING**.
+
+---
+
+#### ✅ **Kapan kamu BUTUH rule NAT itu?**
+
+1. **Kamu ingin client VPN bisa akses internet (web, ping, dll) lewat server.**
+    
+2. **VPN server kamu hanya punya 1 IP publik/internet**, dan semua koneksi client harus "keluar" pakai IP server itu.
+    
+3. Topologi kamu seperti ini:
+    
+    ```
+    [Client Windows] --(VPN Tunnel)--> [Ubuntu Server (Bridged/NAT)] --(Internet)
+    ```
+    
+
+---
+
+#### ❌ **Kapan kamu TIDAK PERLU rule NAT itu?**
+
+1. Kamu cuma ingin **uji koneksi internal**, misalnya:
+    
+    - Ping dari client ke server VPN (`10.8.0.1`)
+        
+    - SSH ke IP internal
+        
+    - Akses layanan internal (web server di 10.8.0.1)
+        
+2. Kamu **nggak butuh client VPN keluar ke internet** melalui server.
+    
+3. Client VPN hanya butuh komunikasi lokal, bukan jadi VPN Gateway.
+    
+
+---
+
+#### 💡 Ilustrasi Kasus Kamu (VirtualBox - Bridged & Host-Only)
+
+- Kalau Ubuntu Server kamu pakai **Bridged Adapter**:
+    
+    - Bisa dianggap punya IP sendiri di LAN.
+        
+    - Kalau client VPN cuma butuh akses ke server, nggak perlu NAT.
+        
+    - Tapi kalau mau client **bisa akses internet via server**, baru butuh `iptables MASQUERADE`.
+        
+- Kalau kamu pakai **Host-Only Adapter**:
+    
+    - Cuma bisa komunikasi lokal antara VM dan Host.
+        
+    - **Nggak butuh NAT**, karena nggak akan bisa ke internet juga.
+        
+
+---
+
+#### ✅ Kesimpulan Praktis
+
+|Tujuan Pengujian|Butuh NAT `iptables -t nat`?|
+|---|---|
+|Ping server VPN dari client|❌ Tidak|
+|Akses web/SSH lokal server dari client|❌ Tidak|
+|Client akses internet lewat server|✅ Ya|
+|Server jadi gateway VPN lengkap|✅ Ya|
+|Cuma testing tunnel dan auth OpenVPN|❌ Tidak|
+
+---
+
+Kalau kamu **nggak butuh klien akses internet**, cukup sampai IP forwarding aja:
+
+```bash
+echo 'net.ipv4.ip_forward = 1' | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
+```
+
+Tapi kalau mau uji routing lengkap, tambahkan NAT rule tadi.
+
+---
+
+Kita lanjut ke bagian **inti OpenVPN**: konfigurasi file `server.conf` dan `client.ovpn`, lengkap dengan **penjelasan setiap barisnya**, biar kamu paham 100% bukan cuma copas 💯💻
+
+---
+
+#### ✅ `server.conf` (Server-side config di Ubuntu)
+
+Lokasi: `/etc/openvpn/server/server.conf`
+
+```conf
+port 1194
+```
+
+> Port yang dipakai untuk koneksi VPN. Default-nya 1194 (UDP). Bisa diubah kalau bentrok.
+
+```conf
+proto udp
+```
+
+> Protokol jaringan. Disarankan `udp` karena lebih cepat, meskipun `tcp` juga bisa.
+
+```conf
+dev tun
+```
+
+> Interface virtual yang digunakan. `tun` untuk routing IP layer (L3). Kalau bridging (L2), pakai `tap`.
+
+```conf
+ca ca.crt
+cert server.crt
+key server.key
+dh dh.pem
+```
+
+> File sertifikat dan kunci:
+
+- `ca.crt`: sertifikat otoritas CA
+    
+- `server.crt`: sertifikat server
+    
+- `server.key`: private key server
+    
+- `dh.pem`: Diffie-Hellman params (untuk secure key exchange)
+    
+
+```conf
+auth SHA256
+```
+
+> Algoritma autentikasi HMAC untuk otentikasi paket data (integrity check).
+
+```conf
+tls-auth ta.key 0
+```
+
+> Mengaktifkan TLS HMAC (shared secret key) untuk melindungi handshake. `0` artinya ini untuk server. Di client nanti pakai `1`.
+
+```conf
+topology subnet
+```
+
+> Menentukan cara distribusi IP ke client. `subnet` lebih kompatibel (1 IP per client), dibandingkan `net30`.
+
+```conf
+server 10.8.0.0 255.255.255.0
+```
+
+> Subnet internal VPN. Server akan jadi `10.8.0.1`, client mulai dari `10.8.0.2`.
+
+```conf
+push "redirect-gateway def1 bypass-dhcp"
+```
+
+> Mendorong route default ke client agar semua trafik lewat VPN server (butuh NAT di server!).
+
+```conf
+push "dhcp-option DNS 8.8.8.8"
+```
+
+> Mendorong konfigurasi DNS ke client. Bisa ganti ke DNS internal juga.
+
+```conf
+keepalive 10 120
+```
+
+> Kirim ping setiap 10 detik, dan reset koneksi kalau tidak ada respons selama 120 detik.
+
+```conf
+cipher AES-256-CBC
+```
+
+> Enkripsi data antar client-server. Disarankan pakai AES-256. Cocok dengan `auth SHA256`.
+
+```conf
+persist-key
+persist-tun
+```
+
+> Jangan hapus key/tunnel saat restart service. Bikin lebih stabil.
+
+```conf
+status openvpn-status.log
+```
+
+> Lokasi file log status koneksi client.
+
+```conf
+verb 3
+```
+
+> Level logging. Nilai 3 cukup informatif. Naikkan ke 4–6 buat debugging, atau turunkan ke 1 buat production.
+
+---
+
+#### ✅ `client.ovpn` (Client-side config untuk Windows, Android, Linux)
+
+File ini bisa diletakkan di:
+
+- **Windows**: `C:\Users\<kamu>\OpenVPN\config\client.ovpn`
+    
+- **Linux**: jalankan dengan `openvpn --config client.ovpn`
+    
+
+```conf
+client
+```
+
+> Menandakan file ini untuk client (bukan server).
+
+```conf
+dev tun
+proto udp
+remote [IP_SERVER] 1194
+```
+
+> Koneksi ke server via interface `tun`, protokol `udp`, dan IP + port server (bisa pakai domain juga).
+
+```conf
+resolv-retry infinite
+```
+
+> Kalau gagal resolve IP (misalnya DNS belum siap), terus coba ulangi.
+
+```conf
+nobind
+```
+
+> Jangan bind port lokal tertentu, biarkan sistem pilih.
+
+```conf
+persist-key
+persist-tun
+```
+
+> Pertahankan koneksi dan tunnel setelah reconnect.
+
+```conf
+remote-cert-tls server
+```
+
+> Pastikan sertifikat yang diterima memang milik server, bukan client.
+
+```conf
+auth SHA256
+cipher AES-256-CBC
+```
+
+> Harus cocok dengan setting server. Ini tentang otentikasi dan enkripsi data.
+
+```conf
+verb 3
+```
+
+> Logging verbosity di sisi client. Sama seperti server.
+
+```conf
+key-direction 1
+```
+
+> Digunakan bersama `tls-auth`. Client = 1, server = 0.
+
+---
+
+#### 🔐 Sertifikat & Kunci di satu file (inline format)
+
+Supaya mudah, kamu bisa sematkan semua file `.crt`, `.key`, dan `ta.key` di dalam satu file `.ovpn`:
+
+```conf
+<ca>
+-----BEGIN CERTIFICATE-----
+[ISI DARI ca.crt]
+-----END CERTIFICATE-----
+</ca>
+
+<cert>
+-----BEGIN CERTIFICATE-----
+[ISI DARI client1.crt]
+-----END CERTIFICATE-----
+</cert>
+
+<key>
+-----BEGIN PRIVATE KEY-----
+[ISI DARI client1.key]
+-----END PRIVATE KEY-----
+</key>
+
+<tls-auth>
+#
+# 2048 bit OpenVPN static key
+#
+-----BEGIN OpenVPN Static key V1-----
+[ISI DARI ta.key]
+-----END OpenVPN Static key V1-----
+</tls-auth>
+```
+
+---
+
+#### ✅ Bonus Tips
+
+- Kalau `server.conf` kamu dinamai `server.conf`, service-nya jadi:
+    
+    ```bash
+    sudo systemctl start openvpn-server@server
+    ```
+    
+- Di VirtualBox:
+    
+    - Gunakan **Bridged Adapter** biar bisa diakses dari Windows host.
+        
+    - Pastikan `ufw`/`firewalld` dan NAT iptables udah bener kalau akses internet.
+        
+
+---
+
+Di **Ubuntu Server 24.04.2 LTS**, path file-file sertifikat di file `server.conf` bisa kamu sesuaikan tergantung kamu naruhnya di mana. Tapi **standarnya** (dan paling rapi), kamu taruh semua sertifikat dan kunci di direktori:
+
+```
+/etc/openvpn/server/
+```
+
+---
+
+#### ✅ Jadi, path yang benar dan aman:
+
+```conf
+ca /etc/openvpn/server/ca.crt
+cert /etc/openvpn/server/server.crt
+key /etc/openvpn/server/server.key
+dh /etc/openvpn/server/dh.pem
+tls-auth /etc/openvpn/server/ta.key 0
+crl-verify /etc/openvpn/server/crl.pem
+```
+
+---
+
+#### 🔐 Jika kamu mengikuti struktur Easy-RSA standar:
+
+Setelah kamu generate sertifikat dari Easy-RSA (biasanya di `/etc/openvpn/easy-rsa/pki/`), kamu **copy** file hasilnya ke direktori `/etc/openvpn/server/`:
+
+```bash
+# Buat folder tujuan (kalau belum ada)
+sudo mkdir -p /etc/openvpn/server
+
+# Copy sertifikat dan key yang diperlukan
+sudo cp /etc/openvpn/easy-rsa/pki/ca.crt /etc/openvpn/server/
+sudo cp /etc/openvpn/easy-rsa/pki/issued/server.crt /etc/openvpn/server/
+sudo cp /etc/openvpn/easy-rsa/pki/private/server.key /etc/openvpn/server/
+sudo cp /etc/openvpn/easy-rsa/pki/dh.pem /etc/openvpn/server/
+sudo cp /etc/openvpn/easy-rsa/ta.key /etc/openvpn/server/
+sudo cp /etc/openvpn/easy-rsa/pki/crl.pem /etc/openvpn/server/
+
+# Set permission biar aman
+sudo chmod 600 /etc/openvpn/server/server.key
+sudo chown root:root /etc/openvpn/server/*
+```
+
+---
+
+#### 🧠 Penjelasan Kenapa Perlu Disalin ke `/etc/openvpn/server/`
+
+- Systemd service `openvpn-server@server` secara default mengakses file dari:
+    
+    ```
+    /etc/openvpn/server/server.conf
+    ```
+    
+    Jadi semua resource (cert, key, ta.key) sebaiknya berada di direktori yang sama.
+    
+- Biar **nggak ribet set path absolut beda-beda**, semua cukup satu folder.
+    
+
+---
+
+Kalau kamu punya struktur custom, tinggal sesuaikan saja path-nya di `server.conf`. Misalnya kalau kamu naruh di `/opt/myvpn/certs/`, berarti:
+
+```conf
+ca /opt/myvpn/certs/ca.crt
+```
+
+---
+
+#### 🔐 Client .ovpn file gimana?
+
+Sama, pastikan sertifikat client (`client1.crt`, `client1.key`, dll) juga kamu generate dan masukkan di file `.ovpn` seperti yang dijelaskan sebelumnya (pakai inline `<cert>`, `<key>`, dll), atau diletakkan di folder yang bisa dibaca OpenVPN client.
+
+wajar banget itu muncul peringatan **deprecated** saat kamu jalankan:
+
+```
+openvpn --genkey --secret ta.key
+```
+
+Pesan itu bilang:
+
+> The option --secret is deprecated. Use --genkey secret filename instead.
+
+Artinya, perintah `--secret` sekarang sudah dianggap _kuno_ (deprecated), dan OpenVPN menyarankan supaya kamu pakai format yang baru, yaitu:
+
+```bash
+openvpn --genkey secret ta.key
+```
+
+**Apakah ini masalah?**
+
+- **Tidak masalah sama sekali** untuk penggunaan sehari-hari.
+    
+- Itu cuma peringatan supaya kamu tahu ada cara baru yang lebih direkomendasikan.
+    
+- File `ta.key` yang dihasilkan sama saja dan masih bisa dipakai dengan baik.
+    
+
+---
+
+#### Jadi saran aku:
+
+- Kalau mau update, gunakan sintaks baru:
+    
+    ```bash
+    openvpn --genkey secret ta.key
+    ```
+    
+- Tapi kalau kamu sudah pakai `--genkey --secret ta.key` dan file `ta.key` berhasil dibuat, aman aja, gak perlu diulang.
+    
+
+---
+
+
 
 ## 🧠 . Kesimpulan <a name="Kesimpulan"></a>
 

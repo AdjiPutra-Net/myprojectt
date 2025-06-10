@@ -32,6 +32,9 @@
   <li><a href="#OpenVPN">OpenVPN</a></li>
   <li><a href="#Pengujian OpenVPN">Pengujian OpenVPN</a></li>
   <li><a href="#Hasil Pengujian OpenVPN">Hasil Pengujian OpenVPN</a></li>
+  <li><a href="#Keamanan Database (MYSQL) pada XAMPP">Keamanan Database (MYSQL) pada XAMPP</a></li>
+  <li><a href="#Pengujian Keamanan Database (MYSQL) pada XAMPP">Pengujian Keamanan Database (MYSQL) pada XAMPP</a></li>
+  <li><a href="#Hasil Pengujian Keamanan Database (MYSQL) pada XAMPP">Hasil Pengujian Keamanan Database (MYSQL) pada XAMPP</a></li>
   <li><a href="#kesimpulan">Kesimpulan</a></li>
   <li><a href="#lampiran">Lampiran</a></li>
 </ol>
@@ -6612,6 +6615,133 @@ openvpn --genkey secret ta.key
 - Tapi kalau kamu sudah pakai `--genkey --secret ta.key` dan file `ta.key` berhasil dibuat, aman aja, gak perlu diulang.
     
 
+## 🧾 12. Hasil Pengujian OpenVPN<a name="Hasil Pengujian IDS"></a>
+
+
+## 🕵️‍♂️ 13. Keamanan Database (MYSQL) pada XAMPP<a name="Keamanan Database (MYSQL) pada XAMPP"></a>
+
+Mengamankan website dari serangan berbahaya yaitu SQL Injection.
+
+## 🧾 14. Pengujian Keamanan Database (MYSQL) pada XAMPP<a name="Pengujian Keamanan Database (MYSQL) pada XAMPP"></a>
+
+
+- Pengamanan MySQL di XAMPP
+    
+- Dan **source code kamu yang sengaja rentan SQL Injection & XSS** buat simulasi lab
+    
+
+---
+
+### 🎯 Penjelasan Inti “Keamanan MySQL pada XAMPP”
+
+Yang dimaksud dengan **“pengamanan MySQL” pada XAMPP** itu mencakup beberapa hal:
+
+#### 1. **Mengamankan user database**
+
+- Jangan pakai `root` untuk web app (source code kamu).
+    
+- Buat user khusus misalnya `webuser`, dengan password kuat, dan beri hak akses seminimal mungkin (misalnya: hanya `SELECT`, `INSERT`, `DELETE` kalau perlu).
+    
+
+✅ Kamu sudah **melakukan ini** dengan membuat user:
+
+```sql
+CREATE USER 'webuser'@'localhost' IDENTIFIED BY 'webpass123';
+GRANT ALL PRIVILEGES ON labserangan.* TO 'webuser'@'localhost';
+```
+
+Tapi untuk keamanan nyata (bukan simulasi), seharusnya hanya beri akses terbatas:
+
+```sql
+GRANT SELECT, INSERT ON labserangan.comments TO 'webuser'@'localhost';
+```
+
+---
+
+#### 2. **Disable Remote Root Access (kalau diaktifkan)**
+
+- Root MySQL di XAMPP sebaiknya hanya bisa akses lokal (`localhost`).
+    
+- Jangan biarkan bisa login dari luar (terutama tanpa password — kadang default XAMPP `root` password-nya kosong, ini bahaya!).
+    
+
+✅ Cara amanin:
+
+```sql
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'passwordku';
+```
+
+---
+
+#### 3. **Nonaktifkan fitur berbahaya di konfigurasi MySQL**
+
+- Edit `my.cnf` atau `my.ini` (di XAMPP ada di `xampp/mysql/bin/my.ini`):
+    
+    ```ini
+    [mysqld]
+    skip-symbolic-links
+    skip-name-resolve
+    local-infile=0
+    ```
+    
+- `local-infile=0` mencegah serangan file loading via `LOAD DATA LOCAL`.
+    
+
+---
+
+### 4. **Audit penggunaan user di source code kamu**
+
+- Pastikan file `db.php` tidak menggunakan `root`.
+    
+- Tidak menyimpan password di tempat publik atau tanpa hak akses.
+    
+- Gunakan `.htaccess` (jika Apache aktif) untuk melindungi file `db.php`:
+    
+    ```
+    <Files "db.php">
+      Order allow,deny
+      Deny from all
+    </Files>
+    ```
+    
+
+---
+
+## 🔒 Terkait Serangan SQLi di Lab Kamu?
+
+Ya, ini sangat berkaitan karena:
+
+- Kode login kamu **sengaja rawan SQL Injection**:
+    
+    ```php
+    $query = "SELECT * FROM users WHERE username = '$username' AND password = '$password'";
+    ```
+    
+    → Ini **rentan** dan harusnya kamu pakai _prepared statements_ untuk versi aman.
+    
+- Kalau kamu tidak memisahkan user & akses, attacker bisa pakai SQLi untuk akses `mysql.user`, `INFORMATION_SCHEMA`, dan itu bahaya.
+    
+
+---
+
+## ✅ Jadi, untuk menjawab tugas **point e. Keamanan MySQL pada XAMPP**, kamu bisa:
+
+### 1. ✅ Buat user `webuser` dengan password, akses terbatas (✅ sudah kamu lakukan).
+
+### 2. ✅ Gunakan user `webuser` di `db.php` (✅ sudah kamu lakukan).
+
+### 3. ❌ Jangan gunakan `root` di file PHP atau XAMPP phpMyAdmin.
+
+### 4. 🔒 Lindungi file sensitif seperti `db.php` dengan `.htaccess`.
+
+### 5. 🚫 Nonaktifkan remote root login & pastikan root ada password.
+
+### 6. ✅ Pastikan file `snort.conf`, `rules`, dan lab disiapkan untuk mendeteksi SQLi dan XSS (seperti yang kamu lakukan sekarang).
+
+---
+
+Kalau kamu mau, bisa aku bantu buatkan dokumen atau skrip audit otomatis untuk ngecek semua pengamanan ini di lab kamu. Mau dibantuin buat itu juga?
+
 ---
 
 
@@ -6623,17 +6753,539 @@ openvpn --genkey secret ta.key
 ---
 
 <p align="center"><em>Dokumentasi ini dibuat dengan semangat open source ❤️</em></p>
+```
+
+**praktik lengkap pengamanan MySQL di XAMPP**, disesuaikan dengan **lab simulasi SQLi & XSS** yang udah kamu buat.
+
+---
+
+#### ✅ Tujuan:
+
+1. Mengamankan user database (tidak pakai root).
+    
+2. Memberi hak akses minimal ke `webuser`.
+    
+3. Mengatur password root (jika belum).
+    
+4. Nonaktifkan fitur berbahaya di MySQL.
+    
+5. Lindungi file `db.php`.
+    
+
+---
+
+#### 💻 Langkah Lengkap Praktik di XAMPP
+
+> Misalnya kamu jalanin ini di OS Windows dengan XAMPP. Bisa juga kamu sesuaikan kalau di Ubuntu.
+
+---
+
+#### ✳️ 1. Buat User `webuser` & Database
+
+Buka terminal MySQL (atau phpMyAdmin SQL tab), jalankan ini:
+
+```sql
+-- Buat database lab
+CREATE DATABASE IF NOT EXISTS labserangan;
+
+-- Buat user dengan password kuat
+CREATE USER 'webuser'@'localhost' IDENTIFIED BY 'webpass123';
+
+-- Buat tabel
+USE labserangan;
+CREATE TABLE users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(100),
+  password VARCHAR(100)
+);
+
+CREATE TABLE comments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  content TEXT
+);
+
+-- Isi data dummy
+INSERT INTO users (username, password) VALUES ('admin', 'admin123');
+
+-- Berikan akses minimal ke webuser (cuma SELECT dan INSERT, no DROP, no UPDATE)
+GRANT SELECT, INSERT ON labserangan.* TO 'webuser'@'localhost';
+
+-- Terapkan hak akses
+FLUSH PRIVILEGES;
+```
+
+---
+
+#### ✳️ 2. Ubah `db.php` agar tidak pakai root
+
+```php
+<?php
+$host = "localhost";
+$user = "webuser";
+$pass = "webpass123";
+$db   = "labserangan";
+
+$conn = new mysqli($host, $user, $pass, $db);
+if ($conn->connect_error) {
+  die("Koneksi gagal: " . $conn->connect_error);
+}
+?>
+```
+
+---
+
+#### ✳️ 3. Set Password untuk Root MySQL (jika belum)
+
+Kalau root MySQL kamu masih tanpa password (default XAMPP), masuk ke terminal dan jalankan:
+
+```sql
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'passwordku123!';
+FLUSH PRIVILEGES;
+```
+
+Lalu catat password-nya dan update `phpMyAdmin` config kalau perlu:  
+Edit `config.inc.php`:
+
+```php
+$cfg['Servers'][$i]['password'] = 'passwordku123!';
+```
+
+---
+
+#### ✳️ 4. Nonaktifkan Fitur Berbahaya
+
+Edit file:
+
+```
+xampp/mysql/bin/my.ini
+```
+
+Tambahkan atau ubah:
+
+```ini
+[mysqld]
+local-infile=0
+skip-symbolic-links
+skip-name-resolve
+```
+
+Lalu restart MySQL dari XAMPP Control Panel.
+
+---
+
+#### ✳️ 5. Lindungi File `db.php` dengan `.htaccess`
+
+> Buat file `.htaccess` di folder yang sama dengan `db.php`
+
+```apache
+<Files "db.php">
+  Require all denied
+</Files>
+```
+
+Jika kamu pakai Apache, ini akan mencegah file `db.php` diakses langsung via browser.
+
+---
+
+#### 🔐 Tambahan (Opsional tapi direkomendasikan)
+
+#### ✳️ Ganti login.php jadi pakai _Prepared Statement_ agar lebih aman:
+
+```php
+<?php
+include "db.php";
+$username = $_POST['username'];
+$password = $_POST['password'];
+
+$stmt = $conn->prepare("SELECT * FROM users WHERE username = ? AND password = ?");
+$stmt->bind_param("ss", $username, $password);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result && $result->num_rows > 0) {
+  echo "<h2 style='color: green;'>✅ Login Berhasil!</h2>";
+} else {
+  echo "<h2 style='color: red;'>❌ Login Gagal</h2>";
+}
+echo "<a href='index.php'>Kembali</a>";
+?>
+```
+
+---
+
+#### 📋 Ringkasan Output yang Bisa Kamu Catat untuk Laporan/Tugas
+
+|Langkah|Status|Keterangan|
+|---|---|---|
+|Buat database + tabel|✅ Sukses|`labserangan`, `users`, `comments`|
+|Buat user `webuser`|✅ Sukses|Akses terbatas (SELECT, INSERT)|
+|Edit `db.php` tanpa root|✅ Sukses|Sudah pakai `webuser`|
+|Set password `root`|✅ Sukses|`ALTER USER root...`|
+|Nonaktifkan fitur rawan|✅ Sukses|`local-infile=0`, dll|
+|Proteksi `db.php` via `.htaccess`|✅ Sukses|Blok akses langsung|
+|Ubah login jadi aman|✅ Opsional|Sudah tidak rawan SQLi|
+
+---
+
+Berikut adalah script otomatis lengkap dan anti gagal, Keamanan MySQL pada XAMPP_, sekaligus menyimulasikan SQL Injection dan XSS. Script ini mencakup:
+
+- Pembuatan database dan user terbatas `webuser`
+    
+- Proteksi file database (`db.php`)
+    
+- Deploy file PHP lab (`index.php`, `login.php`, `comment.php`, `reset_comments.php`)
+    
+- Konfigurasi `.htaccess` untuk melindungi file sensitif
+    
+
+---
+
+### ✅ Script Otomatis (Copy-paste sekaligus)
+
+```bash
+#!/bin/bash
+set -e
+
+# Lokasi direktori lab
+LAB_DIR="/opt/lampp/htdocs/labserangan"
+
+# 1. Buat direktori lab
+mkdir -p "$LAB_DIR"
+cd "$LAB_DIR"
+
+# 2. Buat file db.php dengan koneksi database yang aman
+cat << EOF > db.php
+<?php
+\$host = "localhost";
+\$user = "webuser";
+\$pass = "webpass123";
+\$db   = "labserangan";
+
+\$conn = new mysqli(\$host, \$user, \$pass, \$db);
+if (\$conn->connect_error) {
+  die("Koneksi gagal: " . \$conn->connect_error);
+}
+?>
+EOF
+
+# 3. Proteksi file db.php agar tidak bisa diakses langsung via browser
+cat << EOF > .htaccess
+<Files "db.php">
+    Order allow,deny
+    Deny from all
+</Files>
+EOF
+
+# 4. Buat file database.sql
+cat << EOF > database.sql
+CREATE DATABASE IF NOT EXISTS labserangan;
+USE labserangan;
+
+CREATE TABLE IF NOT EXISTS users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(100),
+  password VARCHAR(100)
+);
+
+CREATE TABLE IF NOT EXISTS comments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  content TEXT
+);
+
+-- Akun dummy
+INSERT IGNORE INTO users (username, password) VALUES ('admin', 'admin123');
+
+-- User DB terbatas
+CREATE USER IF NOT EXISTS 'webuser'@'localhost' IDENTIFIED BY 'webpass123';
+GRANT SELECT, INSERT, DELETE, UPDATE ON labserangan.* TO 'webuser'@'localhost';
+FLUSH PRIVILEGES;
+EOF
+
+# 5. Jalankan script SQL (asumsi pakai root dan password kosong di XAMPP)
+mysql -u root < database.sql
+
+# 6. Buat file index.php (form login dan komentar)
+cat << EOF > index.php
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Simulasi SQLi & XSS</title>
+  <style>
+    body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
+    .box { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+    input, textarea { width: 100%; margin: 5px 0; padding: 8px; }
+    button { padding: 10px 15px; background: #007BFF; color: white; border: none; }
+  </style>
+</head>
+<body>
+  <h1>🔐 Simulasi SQL Injection</h1>
+  <div class="box">
+    <form action="login.php" method="POST">
+      <input type="text" name="username" placeholder="Username" required>
+      <input type="password" name="password" placeholder="Password" required>
+      <button type="submit">Login</button>
+    </form>
+  </div>
+
+  <h1>💬 Simulasi XSS Komentar</h1>
+  <div class="box">
+    <form action="comment.php" method="POST">
+      <textarea name="comment" placeholder="Ketik komentar (bisa <script>)" required></textarea>
+      <button type="submit">Kirim</button>
+    </form>
+  </div>
+
+  <div class="box">
+    <h2>Komentar Sebelumnya:</h2>
+    <?php
+    include "db.php";
+    \$result = \$conn->query("SELECT content FROM comments ORDER BY id DESC");
+    while (\$row = \$result->fetch_assoc()) {
+      echo "<p>" . \$row['content'] . "</p>";
+    }
+    ?>
+  </div>
+</body>
+</html>
+EOF
+
+# 7. Buat file login.php
+cat << EOF > login.php
+<?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+include "db.php";
+
+\$username = \$_POST['username'];
+\$password = \$_POST['password'];
+
+\$query = "SELECT * FROM users WHERE username = '\$username' AND password = '\$password'";
+\$result = \$conn->query(\$query);
+
+if (\$result && \$result->num_rows > 0) {
+  echo "<h2 style='color: green;'>✅ Login Berhasil!</h2>";
+} else {
+  echo "<h2 style='color: red;'>❌ Login Gagal</h2>";
+}
+echo "<a href='index.php'>Kembali</a>";
+?>
+EOF
+
+# 8. Buat file comment.php
+cat << EOF > comment.php
+<?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+include "db.php";
+
+\$comment = \$_POST['comment'];
+\$stmt = \$conn->prepare("INSERT INTO comments (content) VALUES (?)");
+\$stmt->bind_param("s", \$comment);
+\$stmt->execute();
+
+header("Location: index.php");
+?>
+EOF
+
+# 9. Buat file reset_comments.php
+cat << EOF > reset_comments.php
+<?php
+include "db.php";
+\$conn->query("DELETE FROM comments");
+echo "Komentar dihapus.";
+?>
+EOF
+
+# 10. Permissions dan selesai
+chmod 644 *.php *.sql
+chmod 600 db.php .htaccess
+echo "[✓] Lab berhasil di-setup di $LAB_DIR"
+```
+
+---
+
+### 🔐 Hasil Keamanan yang Dicapai:
+
+- `webuser` hanya bisa akses database `labserangan` (tidak root).
+    
+- `db.php` dilindungi via `.htaccess` dan tidak bisa diakses lewat browser.
+    
+- Kode dibiarkan rentan (tanpa sanitasi input) untuk simulasi SQLi & XSS.
+    
+- Semua file langsung siap dijalankan di XAMPP (`http://localhost/labserangan`).
+
+Kalau kamu pengennya **full aman** dari serangan **SQL Injection dan XSS**, maka:
+
+✅ **Tujuan kamu sekarang adalah bikin versi secure** dari lab kamu — versi **anti diserang**, bukan cuma buat simulasi diserang.
+
+---
+
+#### 🔒 Apa yang Harus Diubah Biar Aman?
+
+Berikut ini daftar pengamanan penting dan apa yang akan kita lakukan:
+
+|Serangan|Perlindungan Wajib|Solusi|
+|---|---|---|
+|SQL Injection|Gunakan **Prepared Statements (PDO atau MySQLi OOP)**|✔️ Ganti query login|
+|XSS|Escape output pakai `htmlspecialchars()` saat ditampilkan|✔️ Escape komentar|
+|DB Connection|Proteksi file `db.php` pakai `.htaccess` dan permission|✔️ Sudah aman sebelumnya|
+|User DB|Gunakan **user terbatas (bukan root)**|✔️ Sudah (`webuser`)|
+
+---
+
+#### ✅ Solusi Lengkap (Script Aman)
+
+Berikut script **versi aman** dari semua file kamu:
+
+---
+
+#### 🔐 `db.php` (sama, sudah aman)
+
+```php
+<?php
+$host = "localhost";
+$user = "webuser";
+$pass = "webpass123";
+$db   = "labserangan";
+
+$conn = new mysqli($host, $user, $pass, $db);
+if ($conn->connect_error) {
+  die("Koneksi gagal: " . $conn->connect_error);
+}
+?>
+```
+
+---
+
+#### 🔐 `login.php` (AMAN dari SQLi ✅)
+
+```php
+<?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+include "db.php";
+
+$username = $_POST['username'];
+$password = $_POST['password'];
+
+// Pakai Prepared Statement biar aman dari SQL Injection
+$stmt = $conn->prepare("SELECT * FROM users WHERE username = ? AND password = ?");
+$stmt->bind_param("ss", $username, $password);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result && $result->num_rows > 0) {
+  echo "<h2 style='color: green;'>✅ Login Berhasil!</h2>";
+} else {
+  echo "<h2 style='color: red;'>❌ Login Gagal</h2>";
+}
+echo "<a href='index.php'>Kembali</a>";
+?>
+```
+
+---
+
+#### 🔐 `comment.php` (AMAN dari XSS ✅)
+
+```php
+<?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+include "db.php";
+
+$comment = $_POST['comment'];
+
+// Simpan komentar apa adanya
+$stmt = $conn->prepare("INSERT INTO comments (content) VALUES (?)");
+$stmt->bind_param("s", $comment);
+$stmt->execute();
+
+header("Location: index.php");
+exit;
+?>
+```
+
+---
+
+#### 🔐 `index.php` (Escape komentar untuk cegah XSS ✅)
+
+```php
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Lab Aman - SQLi & XSS</title>
+  <style>
+    body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
+    .box { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+    input, textarea { width: 100%; margin: 5px 0; padding: 8px; }
+    button { padding: 10px 15px; background: #28a745; color: white; border: none; }
+  </style>
+</head>
+<body>
+
+  <h1>🔐 Login Aman (SQLi Tertolak)</h1>
+  <div class="box">
+    <form action="login.php" method="POST">
+      <input type="text" name="username" placeholder="Username" required>
+      <input type="password" name="password" placeholder="Password" required>
+      <button type="submit">Login</button>
+    </form>
+  </div>
+
+  <h1>💬 Komentar Aman (XSS Tertolak)</h1>
+  <div class="box">
+    <form action="comment.php" method="POST">
+      <textarea name="comment" placeholder="Ketik komentar..." required></textarea>
+      <button type="submit">Kirim</button>
+    </form>
+  </div>
+
+  <div class="box">
+    <h2>Komentar Sebelumnya:</h2>
+    <?php
+    include "db.php";
+    $result = $conn->query("SELECT content FROM comments ORDER BY id DESC");
+    while ($row = $result->fetch_assoc()) {
+      // Escape output supaya tag <script> nggak aktif
+      echo "<p>" . htmlspecialchars($row['content'], ENT_QUOTES, 'UTF-8') . "</p>";
+    }
+    ?>
+  </div>
+
+</body>
+</html>
+```
+
+---
+
+#### 🧼 `reset_comments.php` (tidak berubah)
+
+```php
+<?php
+include "db.php";
+$conn->query("DELETE FROM comments");
+echo "Komentar dihapus.";
+?>
+```
+
+---
+
+#### 📁 Tambahkan `.htaccess` Tetap
+
+```apache
+<Files "db.php">
+    Order allow,deny
+    Deny from all
+</Files>
+```
+
+---
+
+## 🧾 15. Hasil Pengujian Keamanan Database (MYSQL) pada XAMPP<a name="Hasil Pengujian Keamanan Database (MYSQL) pada XAMPP"></a>
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+## 🧾 16. Kesimpulan<a name="Kesimpulan"></a>
+-

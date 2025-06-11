@@ -6927,56 +6927,143 @@ echo "<a href='index.php'>Kembali</a>";
 
 ---
 
-Berikut adalah script otomatis lengkap dan anti gagal, Keamanan MySQL pada XAMPP_, sekaligus menyimulasikan SQL Injection dan XSS. Script ini mencakup:
-
-- Pembuatan database dan user terbatas `webuser`
-    
-- Proteksi file database (`db.php`)
-    
-- Deploy file PHP lab (`index.php`, `login.php`, `comment.php`, `reset_comments.php`)
-    
-- Konfigurasi `.htaccess` untuk melindungi file sensitif
-    
+**script otomatis versi aman (anti SQLi & XSS)** untuk lab kamu. Cukup jalankan sekali, semua file aman langsung ke-setup di folder `labaman` di dalam htdocs XAMPP:
 
 ---
 
-### ✅ Script Otomatis (Copy-paste sekaligus)
+### ✅ **Script Otomatis: `setup_labaman.sh`**
 
 ```bash
 #!/bin/bash
-set -e
 
-# Lokasi direktori lab
-LAB_DIR="/opt/lampp/htdocs/labserangan"
+# === 1. Persiapan ===
+cd /opt/lampp/htdocs || exit 1
+mkdir -p labaman
+cd labaman || exit 1
 
-# 1. Buat direktori lab
-mkdir -p "$LAB_DIR"
-cd "$LAB_DIR"
-
-# 2. Buat file db.php dengan koneksi database yang aman
-cat << EOF > db.php
+# === 2. db.php ===
+cat << 'EOF' > db.php
 <?php
-\$host = "localhost";
-\$user = "webuser";
-\$pass = "webpass123";
-\$db   = "labserangan";
+$host = "localhost";
+$user = "webuser";
+$pass = "webpass123";
+$db   = "labserangan";
 
-\$conn = new mysqli(\$host, \$user, \$pass, \$db);
-if (\$conn->connect_error) {
-  die("Koneksi gagal: " . \$conn->connect_error);
+$conn = new mysqli($host, $user, $pass, $db);
+if ($conn->connect_error) {
+  die("Koneksi gagal: " . $conn->connect_error);
 }
 ?>
 EOF
 
-# 3. Proteksi file db.php agar tidak bisa diakses langsung via browser
-cat << EOF > .htaccess
+# === 3. login.php (anti SQLi) ===
+cat << 'EOF' > login.php
+<?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+include "db.php";
+
+$username = $_POST['username'];
+$password = $_POST['password'];
+
+$stmt = $conn->prepare("SELECT * FROM users WHERE username = ? AND password = ?");
+$stmt->bind_param("ss", $username, $password);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result && $result->num_rows > 0) {
+  echo "<h2 style='color: green;'>✅ Login Berhasil!</h2>";
+} else {
+  echo "<h2 style='color: red;'>❌ Login Gagal</h2>";
+}
+echo "<a href='index.php'>Kembali</a>";
+?>
+EOF
+
+# === 4. comment.php (simpan komentar) ===
+cat << 'EOF' > comment.php
+<?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+include "db.php";
+
+$comment = $_POST['comment'];
+
+$stmt = $conn->prepare("INSERT INTO comments (content) VALUES (?)");
+$stmt->bind_param("s", $comment);
+$stmt->execute();
+
+header("Location: index.php");
+exit;
+?>
+EOF
+
+# === 5. index.php (output aman dari XSS) ===
+cat << 'EOF' > index.php
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Lab Aman - SQLi & XSS</title>
+  <style>
+    body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
+    .box { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+    input, textarea { width: 100%; margin: 5px 0; padding: 8px; }
+    button { padding: 10px 15px; background: #28a745; color: white; border: none; }
+  </style>
+</head>
+<body>
+
+  <h1>🔐 Login Aman (SQLi Tertolak)</h1>
+  <div class="box">
+    <form action="login.php" method="POST">
+      <input type="text" name="username" placeholder="Username" required>
+      <input type="password" name="password" placeholder="Password" required>
+      <button type="submit">Login</button>
+    </form>
+  </div>
+
+  <h1>💬 Komentar Aman (XSS Tertolak)</h1>
+  <div class="box">
+    <form action="comment.php" method="POST">
+      <textarea name="comment" placeholder="Ketik komentar..." required></textarea>
+      <button type="submit">Kirim</button>
+    </form>
+  </div>
+
+  <div class="box">
+    <h2>Komentar Sebelumnya:</h2>
+    <?php
+    include "db.php";
+    $result = $conn->query("SELECT content FROM comments ORDER BY id DESC");
+    while ($row = $result->fetch_assoc()) {
+      echo "<p>" . htmlspecialchars($row['content'], ENT_QUOTES, 'UTF-8') . "</p>";
+    }
+    ?>
+  </div>
+
+</body>
+</html>
+EOF
+
+# === 6. reset_comments.php ===
+cat << 'EOF' > reset_comments.php
+<?php
+include "db.php";
+$conn->query("DELETE FROM comments");
+echo "Komentar dihapus.";
+?>
+EOF
+
+# === 7. .htaccess untuk amankan db.php ===
+cat << 'EOF' > .htaccess
 <Files "db.php">
     Order allow,deny
     Deny from all
 </Files>
 EOF
 
-# 4. Buat file database.sql
+# === 8. database.sql untuk setup database & user ===
 cat << EOF > database.sql
 CREATE DATABASE IF NOT EXISTS labserangan;
 USE labserangan;
@@ -6992,129 +7079,59 @@ CREATE TABLE IF NOT EXISTS comments (
   content TEXT
 );
 
--- Akun dummy
-INSERT IGNORE INTO users (username, password) VALUES ('admin', 'admin123');
+INSERT INTO users (username, password) VALUES ('admin', 'admin123');
 
--- User DB terbatas
 CREATE USER IF NOT EXISTS 'webuser'@'localhost' IDENTIFIED BY 'webpass123';
-GRANT SELECT, INSERT, DELETE, UPDATE ON labserangan.* TO 'webuser'@'localhost';
+GRANT ALL PRIVILEGES ON labserangan.* TO 'webuser'@'localhost';
 FLUSH PRIVILEGES;
 EOF
 
-# 5. Jalankan script SQL (asumsi pakai root dan password kosong di XAMPP)
-mysql -u root < database.sql
+# === 9. Eksekusi SQL untuk buat DB + user ===
+/opt/lampp/bin/mysql -u root < database.sql
 
-# 6. Buat file index.php (form login dan komentar)
-cat << EOF > index.php
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <title>Simulasi SQLi & XSS</title>
-  <style>
-    body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
-    .box { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
-    input, textarea { width: 100%; margin: 5px 0; padding: 8px; }
-    button { padding: 10px 15px; background: #007BFF; color: white; border: none; }
-  </style>
-</head>
-<body>
-  <h1>🔐 Simulasi SQL Injection</h1>
-  <div class="box">
-    <form action="login.php" method="POST">
-      <input type="text" name="username" placeholder="Username" required>
-      <input type="password" name="password" placeholder="Password" required>
-      <button type="submit">Login</button>
-    </form>
-  </div>
-
-  <h1>💬 Simulasi XSS Komentar</h1>
-  <div class="box">
-    <form action="comment.php" method="POST">
-      <textarea name="comment" placeholder="Ketik komentar (bisa <script>)" required></textarea>
-      <button type="submit">Kirim</button>
-    </form>
-  </div>
-
-  <div class="box">
-    <h2>Komentar Sebelumnya:</h2>
-    <?php
-    include "db.php";
-    \$result = \$conn->query("SELECT content FROM comments ORDER BY id DESC");
-    while (\$row = \$result->fetch_assoc()) {
-      echo "<p>" . \$row['content'] . "</p>";
-    }
-    ?>
-  </div>
-</body>
-</html>
-EOF
-
-# 7. Buat file login.php
-cat << EOF > login.php
-<?php
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-include "db.php";
-
-\$username = \$_POST['username'];
-\$password = \$_POST['password'];
-
-\$query = "SELECT * FROM users WHERE username = '\$username' AND password = '\$password'";
-\$result = \$conn->query(\$query);
-
-if (\$result && \$result->num_rows > 0) {
-  echo "<h2 style='color: green;'>✅ Login Berhasil!</h2>";
-} else {
-  echo "<h2 style='color: red;'>❌ Login Gagal</h2>";
-}
-echo "<a href='index.php'>Kembali</a>";
-?>
-EOF
-
-# 8. Buat file comment.php
-cat << EOF > comment.php
-<?php
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-include "db.php";
-
-\$comment = \$_POST['comment'];
-\$stmt = \$conn->prepare("INSERT INTO comments (content) VALUES (?)");
-\$stmt->bind_param("s", \$comment);
-\$stmt->execute();
-
-header("Location: index.php");
-?>
-EOF
-
-# 9. Buat file reset_comments.php
-cat << EOF > reset_comments.php
-<?php
-include "db.php";
-\$conn->query("DELETE FROM comments");
-echo "Komentar dihapus.";
-?>
-EOF
-
-# 10. Permissions dan selesai
-chmod 644 *.php *.sql
-chmod 600 db.php .htaccess
-echo "[✓] Lab berhasil di-setup di $LAB_DIR"
+# === 10. Pesan Sukses ===
+echo -e "\n✅ Lab aman dari SQLi & XSS telah berhasil dipasang di: /opt/lampp/htdocs/labaman"
+echo "📂 Akses di browser: http://localhost/labaman"
 ```
 
 ---
 
-### 🔐 Hasil Keamanan yang Dicapai:
+### 🧪 Cara Jalankan:
 
-- `webuser` hanya bisa akses database `labserangan` (tidak root).
+1. Simpan file script sebagai `setup_labaman.sh`
     
-- `db.php` dilindungi via `.htaccess` dan tidak bisa diakses lewat browser.
+2. Jalankan:
     
-- Kode dibiarkan rentan (tanpa sanitasi input) untuk simulasi SQLi & XSS.
-    
-- Semua file langsung siap dijalankan di XAMPP (`http://localhost/labserangan`).
 
+```bash
+chmod +x setup_labaman.sh
+sudo ./setup_labaman.sh
+```
+
+---
+
+### 🔐 Hasilnya:
+
+- Semua file `index.php`, `login.php`, `comment.php`, `reset_comments.php`, `db.php` langsung dibuat.
+    
+- Disimpan di `/opt/lampp/htdocs/labaman`
+    
+- Database, user `webuser`, dan tabel langsung siap pakai.
+    
+- Aman dari:
+    
+    - 🛡️ SQL Injection → via `prepare() + bind_param()`
+        
+    - 🛡️ XSS → via `htmlspecialchars()`
+        
+    - 🛡️ Akses langsung `db.php` → diblok `.htaccess`
+        
+
+---
+
+
+
+---
 Kalau kamu pengennya **full aman** dari serangan **SQL Injection dan XSS**, maka:
 
 ✅ **Tujuan kamu sekarang adalah bikin versi secure** dari lab kamu — versi **anti diserang**, bukan cuma buat simulasi diserang.

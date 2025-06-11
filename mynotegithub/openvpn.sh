@@ -101,7 +101,9 @@ cp pki/issued/client1.crt pki/private/client1.key pki/ca.crt ta.key ~/client-con
 info "STEP 11: Buat file konfigurasi client .ovpn..."
 mkdir -p ~/client-configs/files
 CLIENT_OVPN=~/client-configs/files/client1.ovpn
-CLIENT_IP=$(ip -4 addr show | grep 192.168.56 | awk '{print $2}' | cut -d'/' -f1 | head -n1)
+
+# 🟢 AUTO-DETEKSI IP LOKAL (bukan 127.0.0.1)
+CLIENT_IP=$(ip -4 addr show | awk '/inet/ && $2 !~ /^127/ {print $2}' | cut -d'/' -f1 | head -n1)
 
 cat <<EOF > "$CLIENT_OVPN"
 client

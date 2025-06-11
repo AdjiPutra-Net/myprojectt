@@ -6931,7 +6931,7 @@ echo "<a href='index.php'>Kembali</a>";
 
 ---
 
-### ✅ **Script Otomatis: `setup_labaman.sh`**
+#### ✅ **Script Otomatis: `setup_labaman.sh`**
 
 ```bash
 #!/bin/bash
@@ -7096,7 +7096,7 @@ echo "📂 Akses di browser: http://localhost/labaman"
 
 ---
 
-### 🧪 Cara Jalankan:
+#### 🧪 Cara Jalankan:
 
 1. Simpan file script sebagai `setup_labaman.sh`
     
@@ -7110,7 +7110,7 @@ sudo ./setup_labaman.sh
 
 ---
 
-### 🔐 Hasilnya:
+#### 🔐 Hasilnya:
 
 - Semua file `index.php`, `login.php`, `comment.php`, `reset_comments.php`, `db.php` langsung dibuat.
     

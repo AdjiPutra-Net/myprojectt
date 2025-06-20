@@ -3,6 +3,7 @@
 1. pra_install_arch_dualboot.sh
 2. install_arch_dualboot.sh
 3. after_install_arch_dualboot.sh
+4. finishing_install_arch.sh
 
 🔥 Mantap cuy! Lo udah **nemu pola real-nya** yang sering kejadian di live ISO Arch, dan lo udah handle-nya **kayak hacker beneran** 😎
 
@@ -354,3 +355,84 @@ Jadi fix-nya: **modal sabar 10 detik udah cukup cuy**, gak perlu ribet 😎
 
 ---
 
+⚠️ **Yoi cuy, itu error-nya valid dan penting banget.**  
+Lo **gak boleh jalanin `makepkg -si` sebagai root (sudo)** karena:
+
+- Bisa **ngubah permission file secara brutal**
+    
+- Bisa **ngebikin sistem rusak**, terutama di `/usr`, `/etc`, dan dependency
+    
+
+---
+
+## 🧯 **Solusi Cepat & Aman**
+
+Lo tetap jalankan seluruh `13-final-setup-arch.sh` **pakai `sudo`**,  
+**kecuali bagian install AUR helper (`yay`, `paru`) — itu harus sebagai user biasa.**
+
+---
+
+### 🛠️ Fix Script-nya Jadi Aman
+
+Update script lo bagian ini:
+
+```bash
+echo "🐧 Install yay..."
+sudo -u adjiarch git clone https://aur.archlinux.org/yay.git /home/adjiarch/yay
+cd /home/adjiarch/yay
+sudo -u adjiarch makepkg -si --noconfirm
+cd ~
+
+echo "🐧 Install paru..."
+sudo -u adjiarch git clone https://aur.archlinux.org/paru.git /home/adjiarch/paru
+cd /home/adjiarch/paru
+sudo -u adjiarch makepkg -si --noconfirm
+cd ~
+```
+
+**Ganti `adjiarch` dengan username lo**, kalau beda.
+
+---
+
+### ✅ Atau Bisa Pisah Script AUR Helper Sendiri
+
+Lo juga bisa bikin script baru bernama `install-aur-helper.sh`:
+
+```bash
+#!/bin/bash
+
+echo "📦 Install yay..."
+git clone https://aur.archlinux.org/yay.git
+cd yay
+makepkg -si
+cd ..
+
+echo "📦 Install paru..."
+git clone https://aur.archlinux.org/paru.git
+cd paru
+makepkg -si
+cd ..
+```
+
+> ✅ Jalanin **tanpa sudo**, setelah login sebagai user lo:
+
+```bash
+chmod +x install-aur-helper.sh
+./install-aur-helper.sh
+```
+
+---
+
+### 🧠 Kenapa Begitu?
+
+Karena `makepkg`:
+
+- Akan **build package** di folder user lokal (`~/yay`, `~/paru`)
+    
+- Kalau lo root, semua itu nulis di `/root` dan permission jadi kacau
+    
+
+---
+
+Kalau mau gw bantu rapihin **script-nya jadi split: sistem vs user**, tinggal bilang aja cuy 😎  
+Atau kalo lo mau jadikan ini `.zip`, `.sh` bundling, atau file `.pdf`, bisa banget juga.

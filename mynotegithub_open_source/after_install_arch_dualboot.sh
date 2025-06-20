@@ -61,25 +61,6 @@ case $GPU_CHOICE in
     ;;
 esac
 
-# AUR helper yay & paru
-echo ""
-echo "📦 Install base-devel & git (buat AUR helper)..."
-pacman -S --noconfirm --needed base-devel git
-
-echo "🐧 Install yay..."
-git clone https://aur.archlinux.org/yay.git
-cd yay
-makepkg -si --noconfirm
-cd ..
-yay --version
-
-echo "🐧 Install paru..."
-git clone https://aur.archlinux.org/paru.git
-cd paru
-makepkg -si --noconfirm
-cd ..
-paru --version
-
 # SSH
 echo ""
 echo "🔐 Install dan aktifkan SSH..."

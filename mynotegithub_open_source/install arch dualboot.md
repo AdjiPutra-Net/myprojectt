@@ -1362,3 +1362,106 @@ Atau lo mau gw buatin **installer Arch + Desktop otomatis**, juga siapin!
 
 ---
 
+Yoi cuy, lo udah nangkep inti masalahnya dengan bener banget. Gini bro, gue breakdown step-by-step biar clear:
+
+---
+
+## ⚠️ **Masalah Utama:**
+
+Arch Linux default (pas boot di live ISO) itu **belum include `git` dan tools Wi-Fi GUI**, jadi lo:
+
+- Belum bisa `git clone` karena `git` belum di-install
+    
+- Belum tentu bisa konek Wi-Fi karena Wi-Fi lo mungkin butuh driver tertentu yang belum ke-load di kernel live Arch
+    
+- LAN/Kabel itu opsi paling **aman** karena langsung ke-connect dan gak perlu driver aneh-aneh
+    
+
+---
+
+## ✅ **Solusi Paling Aman & Simple: Pakai Kabel LAN**
+
+Kalau lo pakai kabel LAN:
+
+1. Arch ISO langsung dapet DHCP dari router
+    
+2. Bisa langsung `ping google.com` atau `archlinux.org`
+    
+3. Langsung jalanin:
+    
+    ```bash
+    pacman -Sy git
+    git clone https://github.com/lu-auto-script/arch-install.git
+    cd arch-install
+    ./01-start.sh
+    ```
+    
+
+---
+
+## 🛠️ **Kalau Tetap Mau Pakai Wi-Fi:**
+
+Ini butuh effort dikit. Tapi kalau Wi-Fi lo didukung sama kernel bawaan Arch ISO, bisa jalan:
+
+1. Jalankan:
+    
+    ```bash
+    iwctl
+    ```
+    
+2. Di dalam iwd shell:
+    
+    ```bash
+    device list
+    station wlan0 scan
+    station wlan0 get-networks
+    station wlan0 connect NAMA_WIFI
+    ```
+    
+3. Setelah konek, install git:
+    
+    ```bash
+    pacman -Sy git
+    ```
+    
+4. Baru clone repo lo:
+    
+    ```bash
+    git clone https://github.com/lu-auto-script/arch-install.git
+    ```
+    
+
+---
+
+## ❗ Kalau Wi-Fi **Gak Kedetect** sama sekali?
+
+> Artinya kernel live Arch belum include driver Wi-Fi lo (misal: Broadcom, Realtek tertentu, dll)
+
+👉 **Solusinya cuma ada 2:**
+
+- Gunakan **LAN/kabel** (paling aman)
+    
+- **Remaster ISO Arch** lo sendiri yang include driver Wi-Fi lo _(ini ribet dan butuh waktu)_
+    
+
+---
+
+## ✅ Rekomendasi dari gue:
+
+Kalau lo beneran niat ngelakuin full install Arch dengan script yang udah lo push ke GitHub:
+
+🔌 **Gunakan kabel LAN dulu pas install**  
+➡ Nanti setelah system Arch lo terinstall full + masuk desktop (GNOME/KDE/XFCE), baru lo setup Wi-Fi lo lebih proper (driver, firmware, NetworkManager GUI, dsb)
+
+---
+
+Kalau lo butuh:
+
+- Script buat auto-setup Wi-Fi
+    
+- Cara ngedeteksi hardware Wi-Fi lo dari live ISO
+    
+- Atau even remaster ISO Arch yang udah include `git + Wi-Fi driver`
+    
+
+...bilang aja cuy ✊

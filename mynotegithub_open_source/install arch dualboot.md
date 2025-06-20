@@ -1866,3 +1866,235 @@ Mau gue buatin auto-check dualboot + grub update juga setelah reboot? 😏
 
 ---
 
+🧠 **Bener banget cuy, pemahaman lo udah tepat!** Nih gw pertegas dan bedain skenarionya buat lo biar makin solid:
+
+---
+
+## 🖥️ **Kalau lo install Arch Linux di Dualboot (fisik, bukan VM)**
+
+### ✅ Urutan Langkah:
+
+1. `exit` dari chroot
+    
+2. Jalankan:
+    
+    ```bash
+    umount -R /mnt
+    ```
+    
+3. **CABUT Flashdisk (USB)**
+    
+4. Jalankan:
+    
+    ```bash
+    reboot
+    ```
+    
+5. ✅ Setelah restart, harusnya muncul **GRUB Bootloader** dengan pilihan:
+    
+    - Arch Linux
+        
+    - Windows Boot Manager  
+        (Kalau belum muncul: `os-prober && grub-mkconfig -o /boot/grub/grub.cfg`)
+        
+
+---
+
+## 💻 **Kalau lo install Arch Linux di VirtualBox/VMware**
+
+### ✅ Urutan Langkah:
+
+1. `exit` dari chroot
+    
+2. Jalankan:
+    
+    ```bash
+    umount -R /mnt
+    ```
+    
+3. **REMOVE attachment ISO** dari pengaturan VM:
+    
+    - VirtualBox: Settings → Storage → Lepas file `.iso`
+        
+    - VMware: Edit virtual machine settings → CD/DVD → Uncheck/Remove ISO
+        
+4. Jalankan:
+    
+    ```bash
+    reboot
+    ```
+    
+5. ✅ Setelah restart, GRUB muncul dan boot ke Arch Linux-nya
+    
+
+---
+
+### 🧠 Catatan Tambahan:
+
+- **Jangan cabut/lepaskan ISO atau flashdisk sebelum `umount`**, karena itu bisa ngerusak struktur partisi atau bikin GRUB gak beres.
+    
+- Kalau GRUB gak muncul, Arch tetap bisa diboot manual dari live ISO dan perbaiki pakai chroot & `grub-install`.
+    
+
+---
+
+Kalau lo mau gw buatin **flowchart atau checklist install Arch Linux buat dualboot dan VM** biar tinggal ikutin doang, tinggal bilang aja cuy 😎
+
+---
+
+🎯 **Tepat banget, bro!** Itu kejadian **normal dan expected**, dan lo udah nangkep akar masalahnya dengan benar.
+
+---
+
+## 📌 Penjelasan Kenapa `/etc/resolv.conf` Berubah Setelah Reboot:
+
+### 💡 **Alasannya: Karena Berpindah dari Live ISO ke Sistem Terinstall**
+
+Pas lo masih di Arch Live ISO (`archiso`), lo ngatur `/etc/resolv.conf` itu milik **environment live**, bukan milik sistem Arch yang barusan lo install ke HDD.
+
+Begitu lo:
+
+- `umount -R /mnt`
+    
+- `reboot`
+    
+- Lalu **masuk ke sistem Arch yang baru**
+    
+
+... maka semua file yang lo ubah di Live ISO ya **hilang**, termasuk `/etc/resolv.conf`, karena udah pindah root environment-nya ke HDD/SSD hasil install.
+
+---
+
+## 🛠️ Solusi: Atur Ulang DNS di Arch yang Baru
+
+### ✅ Langkah-Langkah Pasca Reboot:
+
+Setelah masuk ke Arch Linux yang baru, langsung lakukan ini:
+
+1. **Bikin config biar NetworkManager gak auto-override DNS:**
+    
+    ```bash
+    sudo mkdir -p /etc/NetworkManager/conf.d
+    echo -e "[main]\ndns=none" | sudo tee /etc/NetworkManager/conf.d/dns.conf
+    ```
+    
+2. **Tulis manual DNS-nya ke `/etc/resolv.conf`:**
+    
+    ```bash
+    echo -e "nameserver 8.8.8.8\nnameserver 1.1.1.1" | sudo tee /etc/resolv.conf
+    ```
+    
+3. **Restart NetworkManager:**
+    
+    ```bash
+    sudo systemctl restart NetworkManager
+    ```
+    
+4. ✅ Internet langsung jalan normal, dan DNS gak berubah-ubah lagi tiap reboot.
+    
+
+---
+
+### 🧠 Bonus (Opsional): Lock `/etc/resolv.conf` Biar Nggak Bisa Diubah
+
+```bash
+sudo chattr +i /etc/resolv.conf
+```
+
+> Tapi hati-hati: kalau lo pakai VPN, DHCP, atau tool lain yang perlu ubah DNS, ini bisa bikin konflik. Jadi kunci hanya kalau lo yakin DNS-nya gak perlu diubah-ubah.
+
+---
+
+Kalau lo mau gw buatin **script after-install khusus ngunci DNS, pasang driver, enable network, dan setup mirror** sekaligus, tinggal bilang ya cuy. Sekali run, semua kelar. 😎
+
+---
+
+🔥 Oke cuy, ini dia **solusi fix, clean, dan aman** biar isi `resolv.conf` lo:
+
+- ✅ **Gak berubah-ubah sendiri**
+    
+- ✅ **Internetan tetap jalan**
+    
+- ✅ **Gak nimbulin konflik sama NetworkManager, DHCP, VPN, dsb**
+    
+
+---
+
+## ✅ **Solusi Fix `resolv.conf` Stabil & Aman**
+
+### 1️⃣ **Buat Config untuk NetworkManager**
+
+> Tujuan: ngasih tau ke NetworkManager **"Jangan utak-atik DNS!"**
+
+```bash
+sudo mkdir -p /etc/NetworkManager/conf.d
+echo -e "[main]\ndns=none" | sudo tee /etc/NetworkManager/conf.d/dns.conf
+```
+
+---
+
+### 2️⃣ **Tulis Manual DNS ke `resolv.conf`**
+
+```bash
+echo -e "nameserver 8.8.8.8\nnameserver 1.1.1.1" | sudo tee /etc/resolv.conf
+```
+
+> Lo bisa ganti ke:
+
+- Cloudflare: `1.1.1.1`
+    
+- Google: `8.8.8.8`
+    
+- OpenDNS: `208.67.222.222`
+    
+- Atau gabungin sesuai selera
+    
+
+---
+
+### 3️⃣ **Restart NetworkManager**
+
+```bash
+sudo systemctl restart NetworkManager
+```
+
+> Biar dia ngikutin config barunya (gak ganggu DNS lagi)
+
+---
+
+### 4️⃣ **(Opsional) Kunci `resolv.conf`**
+
+Kalau lo yakin DNS gak perlu diganti-ganti (misalnya gak pake VPN/DHCP dinamis):
+
+```bash
+sudo chattr +i /etc/resolv.conf
+```
+
+> Ini bikin file-nya **immutable (tidak bisa diubah)**  
+> Kalau nanti mau ubah DNS lagi:
+
+```bash
+sudo chattr -i /etc/resolv.conf
+```
+
+---
+
+## 🧠 Kenapa Gak Langsung Di-kunci Aja?
+
+Karena:
+
+- DHCP, VPN, DNS-over-TLS, atau DNSCrypt **perlu akses tulis ke `resolv.conf`**
+    
+- Kalau dikunci paksa, bisa bikin koneksi lo error saat pakai fitur-fitur itu
+    
+
+Jadi solusi paling **aman & fleksibel** adalah:  
+✅ **`dns=none` + tulis DNS manual**  
+💥 Bukan langsung kunci file-nya.
+
+---
+
+Kalau lo mau gw buatin **script `fix-dns.sh` tinggal sekali run**, biar semua langkah itu auto, tinggal bilang aja ya cuy. ✊
+
+---
+

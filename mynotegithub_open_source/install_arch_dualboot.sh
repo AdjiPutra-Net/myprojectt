@@ -219,33 +219,40 @@ echo "✅ GRUB berhasil diinstall dan dikonfigurasi!"
 echo -e "🧹 \e[1mTahap 12: Exit, Unmount & Reboot\e[0m"
 echo "------------------------------------------"
 
-# Deteksi apakah sedang di dalam chroot
+# Deteksi apakah masih di dalam chroot (dijalankan dari arch-chroot)
 if grep -q '/mnt' /proc/1/mounts; then
-    echo "⚠️  Anda saat ini masih di dalam lingkungan chroot."
-    echo "💡 Silakan EXIT dulu secara manual dengan perintah: exit"
+    echo "⚠️  Saat ini lo masih berada di dalam lingkungan chroot (/mnt)."
+    echo "🔚 Untuk melanjutkan instalasi:"
+    echo "   ➜ Ketik perintah: \e[1mexit\e[0m"
+    echo "   ➜ Lalu jalankan script ini lagi dari live ISO (di luar chroot)"
     exit 1
 fi
 
-# Unmount semua partisi yang dimount di /mnt
+# Unmount semua partisi dari /mnt
 echo "🗂️  Unmount semua partisi dari /mnt..."
 umount -R /mnt 2>/dev/null
 
-# Cek exit code
+# Cek status unmount
 if [[ $? -eq 0 ]]; then
     echo "✅ Semua partisi berhasil di-unmount."
 else
     echo "⚠️  Beberapa partisi gagal di-unmount atau sudah tidak ter-mount."
-    echo "   ➜ Cek manual jika perlu dengan: mount | grep mnt"
+    echo "   ➜ Cek manual dengan: mount | grep mnt"
 fi
 
+# Instruksi ke user sebelum reboot
+echo -e "\n📝 \e[1mCatatan Penting Sebelum Reboot:\e[0m"
+echo "✅ Instalasi Arch Linux sudah selesai."
+echo "📦 Sekarang sistem sudah terpasang di hard disk kamu."
+echo "🔌 Silakan CABUT USB/ISO sebelum reboot agar langsung masuk ke sistem Arch Linux yang baru."
+
 # Konfirmasi reboot
-read -rp "🔁 Mau reboot sekarang? [Y/n]: " jawab
-jawab=${jawab,,}  # lowercase
+read -rp $'\n🔁 Mau reboot sekarang? [Y/n]: ' jawab
+jawab=${jawab,,}  # konversi ke lowercase
 
 if [[ "$jawab" =~ ^(y|yes)?$ || "$jawab" == "" ]]; then
     echo "🚀 Rebooting sekarang..."
-    reboot || echo "⚠️  Sedang di live session, reboot mungkin perlu diketik manual."
+    reboot || echo "⚠️  Gagal reboot otomatis. Ketik manual: reboot"
 else
-    echo "✅ Beres. Silakan reboot manual kapan saja dengan perintah: reboot"
+    echo "✅ Oke, lo bisa reboot nanti dengan perintah: reboot"
 fi
-

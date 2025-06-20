@@ -1139,19 +1139,11 @@ Kalau mau sekalian lanjut ke **Tahap 11: Enable NetworkManager & Exit**, bilang 
 
 ---
 
-Oke cuy! Nih gw bikinin automation script untuk **Tahap 12: Beresin DNS Protect Sementara + Exit Info + Unmount & Reboot**, tapi dengan _catatan penting_ ya:
-
-> ❗ **Karena ini jalan di chroot**, command `reboot` **nggak bakal jalan otomatis**. Jadi gw bikin script-nya kasih instruksi buat lo keluar chroot manual. Tapi semua step lainnya (chattr & umount) udah diurusin.
+Siap cuy, ini versi **fix dan diperjelas** dari script `Tahap 12: Exit, Unmount & Reboot`, lengkap dengan penjelasan untuk user setelah `exit`, biar **nggak bingung lanjutan step-nya**. Gue kasih comment & echo yang bener-bener guiding:
 
 ---
 
-Berikut adalah **automation script untuk Tahap 12: Exit, Unmount & Reboot**, yang **dinamis dan matching** dengan kondisi Arch Linux Live Environment (`archiso`).
-
-Karena `exit` dan `reboot` **nggak bisa dieksekusi otomatis saat masih di dalam chroot atau live session**, maka bagian itu **dibikin interaktif**.
-
----
-
-### 🔧 Script: `12-exit-unmount-reboot.sh`
+### ✅ **`12-exit-unmount-reboot.sh` (Versi Fix & Smart)**
 
 ```bash
 #!/bin/bash
@@ -1159,50 +1151,58 @@ Karena `exit` dan `reboot` **nggak bisa dieksekusi otomatis saat masih di dalam 
 echo -e "🧹 \e[1mTahap 12: Exit, Unmount & Reboot\e[0m"
 echo "------------------------------------------"
 
-# Deteksi apakah sedang di dalam chroot
+# Deteksi apakah masih di dalam chroot (dijalankan dari arch-chroot)
 if grep -q '/mnt' /proc/1/mounts; then
-    echo "⚠️  Anda saat ini masih di dalam lingkungan chroot."
-    echo "💡 Silakan EXIT dulu secara manual dengan perintah: exit"
+    echo "⚠️  Saat ini lo masih berada di dalam lingkungan chroot (/mnt)."
+    echo "🔚 Untuk melanjutkan instalasi:"
+    echo "   ➜ Ketik perintah: \e[1mexit\e[0m"
+    echo "   ➜ Lalu jalankan script ini lagi dari live ISO (di luar chroot)"
     exit 1
 fi
 
-# Unmount semua partisi yang dimount di /mnt
+# Unmount semua partisi dari /mnt
 echo "🗂️  Unmount semua partisi dari /mnt..."
 umount -R /mnt 2>/dev/null
 
-# Cek exit code
+# Cek status unmount
 if [[ $? -eq 0 ]]; then
     echo "✅ Semua partisi berhasil di-unmount."
 else
     echo "⚠️  Beberapa partisi gagal di-unmount atau sudah tidak ter-mount."
-    echo "   ➜ Cek manual jika perlu dengan: mount | grep mnt"
+    echo "   ➜ Cek manual dengan: mount | grep mnt"
 fi
 
+# Instruksi ke user sebelum reboot
+echo -e "\n📝 \e[1mCatatan Penting Sebelum Reboot:\e[0m"
+echo "✅ Instalasi Arch Linux sudah selesai."
+echo "📦 Sekarang sistem sudah terpasang di hard disk kamu."
+echo "🔌 Silakan CABUT USB/ISO sebelum reboot agar langsung masuk ke sistem Arch Linux yang baru."
+
 # Konfirmasi reboot
-read -rp "🔁 Mau reboot sekarang? [Y/n]: " jawab
-jawab=${jawab,,}  # lowercase
+read -rp $'\n🔁 Mau reboot sekarang? [Y/n]: ' jawab
+jawab=${jawab,,}  # konversi ke lowercase
 
 if [[ "$jawab" =~ ^(y|yes)?$ || "$jawab" == "" ]]; then
     echo "🚀 Rebooting sekarang..."
-    reboot || echo "⚠️  Sedang di live session, reboot mungkin perlu diketik manual."
+    reboot || echo "⚠️  Gagal reboot otomatis. Ketik manual: reboot"
 else
-    echo "✅ Beres. Silakan reboot manual kapan saja dengan perintah: reboot"
+    echo "✅ Oke, lo bisa reboot nanti dengan perintah: reboot"
 fi
 ```
 
 ---
 
-### 📌 Cara Pakai
+### 📌 Cara Pakai:
 
-1. **Save script ini** sebagai `12-exit-unmount-reboot.sh`
+1. Simpan file ini dengan nama `12-exit-unmount-reboot.sh`
     
-2. Kasih izin eksekusi:
+2. Kasih permission:
     
     ```bash
     chmod +x 12-exit-unmount-reboot.sh
     ```
     
-3. Jalankan:
+3. Jalankan di luar chroot (setelah `exit` dari `arch-chroot`):
     
     ```bash
     ./12-exit-unmount-reboot.sh
@@ -1211,18 +1211,7 @@ fi
 
 ---
 
-### 🚫 Catatan
-
-- Kalau lo masih di `arch-chroot /mnt`, lo **harus keluar dulu manual** (`exit`) karena:
-    
-    - `umount -R /mnt` gak bisa dijalankan saat sedang berada di mount-nya.
-        
-    - `reboot` juga tidak akan bekerja di chroot karena PID 1 bukan init system.
-        
-
----
-
-Kalau lo mau versi `.sh` gabungan atau auto-sequence juga bisa gue buatin. Mau? 😎
+Kalau mau lanjut otomatis ke script after install (`13-after-install.sh` misalnya) setelah reboot, bisa juga ditambah hook. Tapi untuk sekarang, script di atas udah mantap dan user-friendly. Mau dibuat versi `auto-lanjut-after-reboot` juga?
 
 ---
 
@@ -1820,6 +1809,60 @@ Nah, kalau lo **nunggu dulu beberapa detik (sekitar 10–20 detik)** sebelum nge
 ---
 
 Jadi fix-nya: **modal sabar 10 detik udah cukup cuy**, gak perlu ribet 😎
+
+---
+
+Mantap, cuy. Setelah lo dapet notif `exit` dari script dan lo **benar-benar keluar dari lingkungan `arch-chroot /mnt`**, **step selanjutnya tinggal lanjutin manual**:
+
+---
+
+### ✅ **Langkah Lanjutan Setelah `exit`**
+
+Begitu lo udah di luar `arch-chroot` (balik ke root prompt di Live ISO, biasanya tampilannya `root@archiso`), lanjutkan step berikut:
+
+```bash
+umount -R /mnt
+```
+
+> ⚠️ Kalau gagal, mungkin partisi udah ke-unmount otomatis. Bisa dicek manual:
+
+```bash
+mount | grep /mnt
+```
+
+---
+
+### 🔁 **Terakhir: Reboot**
+
+Kalau partisi udah di-unmount, lanjut:
+
+```bash
+reboot
+```
+
+> 🔌 **Jangan lupa cabut USB-nya / ISO-nya** dari boot device supaya gak masuk ke Arch ISO lagi.
+
+---
+
+### 🔄 Hasil Setelah Reboot
+
+Lo bakal lihat tampilan GRUB dengan pilihan:
+
+- ✅ Arch Linux
+    
+- ✅ Windows Boot Manager (kalau dualboot & os-prober sukses)
+    
+
+Kalau **Windows belum muncul**, masuk ke Arch Linux dan jalankan:
+
+```bash
+sudo os-prober
+sudo grub-mkconfig -o /boot/grub/grub.cfg
+```
+
+---
+
+Mau gue buatin auto-check dualboot + grub update juga setelah reboot? 😏
 
 ---
 

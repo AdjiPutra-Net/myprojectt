@@ -215,38 +215,37 @@ echo ""
 echo "✅ GRUB berhasil diinstall dan dikonfigurasi!"
 
 #!/bin/bash
-# =============================================
-# 🧹 Tahap 12: Cleanup DNS Protect & Unmount
-# =============================================
 
-echo "🧹 Tahap 12: Cleanup DNS Protect & Unmount"
-echo "--------------------------------------------"
+echo -e "🧹 \e[1mTahap 12: Exit, Unmount & Reboot\e[0m"
+echo "------------------------------------------"
 
-# 🔓 Unlock /etc/resolv.conf (remove immutable flag)
-echo "🔓 Menghapus proteksi file /etc/resolv.conf (jika ada)..."
-if chattr -i /etc/resolv.conf 2>/dev/null; then
-  echo "✅ File /etc/resolv.conf sudah tidak terkunci."
-else
-  echo "⚠️ Gagal unlock /etc/resolv.conf atau sudah unlocked."
+# Deteksi apakah sedang di dalam chroot
+if grep -q '/mnt' /proc/1/mounts; then
+    echo "⚠️  Anda saat ini masih di dalam lingkungan chroot."
+    echo "💡 Silakan EXIT dulu secara manual dengan perintah: exit"
+    exit 1
 fi
 
-# 🗂️ Unmount partisi dari /mnt
-echo
+# Unmount semua partisi yang dimount di /mnt
 echo "🗂️  Unmount semua partisi dari /mnt..."
-if umount -R /mnt 2>/dev/null; then
-  echo "✅ Semua partisi berhasil di-unmount dari /mnt."
+umount -R /mnt 2>/dev/null
+
+# Cek exit code
+if [[ $? -eq 0 ]]; then
+    echo "✅ Semua partisi berhasil di-unmount."
 else
-  echo "⚠️ Beberapa partisi gagal di-unmount. Coba unmount manual."
+    echo "⚠️  Beberapa partisi gagal di-unmount atau sudah tidak ter-mount."
+    echo "   ➜ Cek manual jika perlu dengan: mount | grep mnt"
 fi
 
-# 📝 Info buat langkah selanjutnya
-echo
-echo "📋 Langkah selanjutnya lo harus manual:"
-echo "1. exit"
-echo "2. reboot"
-echo
-echo "⚠️ Cabut USB installer sebelum reboot kalau install di hardware asli!"
-echo "🚀 GRUB akan muncul kalau semuanya sukses."
+# Konfirmasi reboot
+read -rp "🔁 Mau reboot sekarang? [Y/n]: " jawab
+jawab=${jawab,,}  # lowercase
 
-exit 0
+if [[ "$jawab" =~ ^(y|yes)?$ || "$jawab" == "" ]]; then
+    echo "🚀 Rebooting sekarang..."
+    reboot || echo "⚠️  Sedang di live session, reboot mungkin perlu diketik manual."
+else
+    echo "✅ Beres. Silakan reboot manual kapan saja dengan perintah: reboot"
+fi
 

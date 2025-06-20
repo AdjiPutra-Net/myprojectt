@@ -1145,79 +1145,84 @@ Oke cuy! Nih gw bikinin automation script untuk **Tahap 12: Beresin DNS Protect 
 
 ---
 
-## 📜 Script: `12-cleanup-dns-exit.sh`
+Berikut adalah **automation script untuk Tahap 12: Exit, Unmount & Reboot**, yang **dinamis dan matching** dengan kondisi Arch Linux Live Environment (`archiso`).
+
+Karena `exit` dan `reboot` **nggak bisa dieksekusi otomatis saat masih di dalam chroot atau live session**, maka bagian itu **dibikin interaktif**.
+
+---
+
+### 🔧 Script: `12-exit-unmount-reboot.sh`
 
 ```bash
 #!/bin/bash
-# =============================================
-# 🧹 Tahap 12: Cleanup DNS Protect & Unmount
-# =============================================
 
-echo "🧹 Tahap 12: Cleanup DNS Protect & Unmount"
-echo "--------------------------------------------"
+echo -e "🧹 \e[1mTahap 12: Exit, Unmount & Reboot\e[0m"
+echo "------------------------------------------"
 
-# 🔓 Unlock /etc/resolv.conf (remove immutable flag)
-echo "🔓 Menghapus proteksi file /etc/resolv.conf (jika ada)..."
-if chattr -i /etc/resolv.conf 2>/dev/null; then
-  echo "✅ File /etc/resolv.conf sudah tidak terkunci."
-else
-  echo "⚠️ Gagal unlock /etc/resolv.conf atau sudah unlocked."
+# Deteksi apakah sedang di dalam chroot
+if grep -q '/mnt' /proc/1/mounts; then
+    echo "⚠️  Anda saat ini masih di dalam lingkungan chroot."
+    echo "💡 Silakan EXIT dulu secara manual dengan perintah: exit"
+    exit 1
 fi
 
-# 🗂️ Unmount partisi dari /mnt
-echo
+# Unmount semua partisi yang dimount di /mnt
 echo "🗂️  Unmount semua partisi dari /mnt..."
-if umount -R /mnt 2>/dev/null; then
-  echo "✅ Semua partisi berhasil di-unmount dari /mnt."
+umount -R /mnt 2>/dev/null
+
+# Cek exit code
+if [[ $? -eq 0 ]]; then
+    echo "✅ Semua partisi berhasil di-unmount."
 else
-  echo "⚠️ Beberapa partisi gagal di-unmount. Coba unmount manual."
+    echo "⚠️  Beberapa partisi gagal di-unmount atau sudah tidak ter-mount."
+    echo "   ➜ Cek manual jika perlu dengan: mount | grep mnt"
 fi
 
-# 📝 Info buat langkah selanjutnya
-echo
-echo "📋 Langkah selanjutnya lo harus manual:"
-echo "1. exit"
-echo "2. reboot"
-echo
-echo "⚠️ Cabut USB installer sebelum reboot kalau install di hardware asli!"
-echo "🚀 GRUB akan muncul kalau semuanya sukses."
+# Konfirmasi reboot
+read -rp "🔁 Mau reboot sekarang? [Y/n]: " jawab
+jawab=${jawab,,}  # lowercase
 
-exit 0
+if [[ "$jawab" =~ ^(y|yes)?$ || "$jawab" == "" ]]; then
+    echo "🚀 Rebooting sekarang..."
+    reboot || echo "⚠️  Sedang di live session, reboot mungkin perlu diketik manual."
+else
+    echo "✅ Beres. Silakan reboot manual kapan saja dengan perintah: reboot"
+fi
 ```
 
 ---
 
-## 🧠 Cara Pakai:
+### 📌 Cara Pakai
 
-1. Simpan sebagai file:
+1. **Save script ini** sebagai `12-exit-unmount-reboot.sh`
+    
+2. Kasih izin eksekusi:
     
     ```bash
-    nano 12-cleanup-dns-exit.sh
+    chmod +x 12-exit-unmount-reboot.sh
     ```
     
-2. Bikin executable:
+3. Jalankan:
     
     ```bash
-    chmod +x 12-cleanup-dns-exit.sh
-    ```
-    
-3. Jalanin:
-    
-    ```bash
-    ./12-cleanup-dns-exit.sh
+    ./12-exit-unmount-reboot.sh
     ```
     
 
 ---
 
-Kalau udah selesai, tinggal lo:
+### 🚫 Catatan
 
-```bash
-exit
-reboot
-```
+- Kalau lo masih di `arch-chroot /mnt`, lo **harus keluar dulu manual** (`exit`) karena:
+    
+    - `umount -R /mnt` gak bisa dijalankan saat sedang berada di mount-nya.
+        
+    - `reboot` juga tidak akan bekerja di chroot karena PID 1 bukan init system.
+        
 
-Siap cuy! 😎 Kalau lo mau gw gabungin dari step 1 sampai 13 jadi 1 installer otomatis, tinggal bilang!
+---
+
+Kalau lo mau versi `.sh` gabungan atau auto-sequence juga bisa gue buatin. Mau? 😎
 
 ---
 

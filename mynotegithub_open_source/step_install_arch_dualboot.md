@@ -56,6 +56,26 @@ EOF
 
 # lalu setelah itu tunggu 5 menit maksimal, 3 menit minimal untuk aktivasi keyring public-key dari archnya, supaya saat kita update/upgrade/hapus/install paket diarchnya tidak error karena belum diaktivasi
 
+# 🔧 Setup konfigurasi NetworkManager DNS...
+rm /etc/resolv.conf
+mkdir -p /etc/NetworkManager/conf.d
+cat <<EOF > /etc/NetworkManager/conf.d/dns.conf
+[main]
+dns=none
+EOF
+
+# 📡 Setting DNS resolv.conf manual...
+cat <<EOF > /etc/resolv.conf
+nameserver 8.8.8.8
+nameserver 1.1.1.1
+EOF
+
+# lalu setelah itu tunggu 5 menit maksimal, 3 menit minimal untuk aktivasi keyring public-key dari archnya, supaya saat kita update/upgrade/hapus/install paket diarchnya tidak error karena belum diaktivasi
+
+# abis configure dns dan network manager, restart layanan network managernya
+systemctl restart NetworkManager
+
+# abis gas lanjut lagi install paket yang diperlukan untuk setup arch
 pacman -Sy git
 git clone https://github.com/AdjiPutra-Net/myprojectt.git
 cd myprojectt
@@ -67,8 +87,8 @@ pacman -Sy git
 git clone https://github.com/AdjiPutra-Net/myprojectt.git
 cd myprojectt
 cd mynotegithub_open_source/
-chmod +x after_install_arch_dualboot.sh
-./after_install_arch_dualboot.sh
+chmod +x 
+./
 ```
 
 2. pra_install_arch_dualboot.sh
@@ -508,3 +528,170 @@ Karena `makepkg`:
 
 Kalau mau gw bantu rapihin **script-nya jadi split: sistem vs user**, tinggal bilang aja cuy 😎  
 Atau kalo lo mau jadikan ini `.zip`, `.sh` bundling, atau file `.pdf`, bisa banget juga.
+
+---
+
+**🧠 Fix banget analisis lo cuy!** Gini gue rangkum + pertegas biar makin legit logikanya:
+
+---
+
+## 💡 INTI PEMAHAMAN LO: **BENAR BANGET.**
+
+> Kalau `NetworkManager` **belum diinstall**, maka semua konfigurasi `.conf` kayak:
+
+```ini
+/etc/NetworkManager/conf.d/dns.conf
+```
+
+> ✅ **SIA-SIA**, karena servicenya belum exist, alias **belum aktif & belum jalan**.
+
+---
+
+### ⚠️ **Kapan konfigurasi itu jadi berguna?**
+
+> Hanya kalau:
+
+- ✅ `networkmanager` **sudah diinstall**
+    
+- ✅ `systemctl enable --now NetworkManager` sudah dijalankan
+    
+- Baru deh konfigurasi DNS kayak `dns=none` akan kepake
+    
+- Dan dia **akan stop overwrite `/etc/resolv.conf`**
+    
+
+---
+
+## ✅ JADI FIX SOLUSINYA:
+
+### 💻 **Pada saat awal install (masih Live ISO / chroot):**
+
+1. **Jangan buang waktu config di `/etc/NetworkManager/conf.d/*.conf`**
+    
+2. **Langsung set `resolv.conf` manual aja:**
+    
+
+```bash
+echo "nameserver 8.8.8.8" > /etc/resolv.conf
+echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+chattr +i /etc/resolv.conf  # 🔒 dikunci biar gak ke-replace DHCP
+```
+
+---
+
+### 🧽 **Setelah selesai install Arch (permanent system jalan):**
+
+1. **Hapus lock:**
+    
+
+```bash
+chattr -i /etc/resolv.conf
+```
+
+2. **Install NetworkManager & enable servicenya:**
+    
+
+```bash
+pacman -S networkmanager
+systemctl enable --now NetworkManager
+```
+
+3. **Baru bikin config DNS-nya:**
+    
+
+```bash
+mkdir -p /etc/NetworkManager/conf.d
+cat <<EOF > /etc/NetworkManager/conf.d/dns.conf
+[main]
+dns=none
+EOF
+
+echo "nameserver 8.8.8.8" > /etc/resolv.conf
+echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+```
+
+4. **Restart servicenya:**
+    
+
+```bash
+systemctl restart NetworkManager
+```
+
+---
+
+## 🚀 REKOMENDASI ALUR PENGGUNAAN DNS SAAT INSTALL ARCH
+
+|Tahap|Apa yang dilakukan|Gunain config NM?|Lock resolv.conf?|
+|---|---|---|---|
+|💽 Live ISO / chroot (belum install NM)|Set DNS manual|❌ Tidak usah|✅ Ya (`chattr +i`)|
+|💻 Setelah Arch selesai terinstall + NM terinstall|Set DNS via NM|✅ Ya (pakai `.conf`)|❌ Tidak perlu|
+
+---
+
+Kalau mau, gue bisa buatin **script smart** buat auto-detect ini semua + ngatur DNS dengan aman tergantung fase instalasi lo.
+
+Lo mau?
+
+---
+
+✅ **Iya cuy, bener banget. Kalau udah kayak gitu, DNS-nya gak bakal berubah-ubah lagi.**
+
+Berikut penjelasan lengkapnya:
+
+---
+
+## 🧠 Kenapa DNS-nya **gak perlu dikunci (`chattr +i`) lagi** setelah NetworkManager aktif?
+
+Karena:
+
+### ✅ NetworkManager **sudah punya kendali penuh atas `resolv.conf`**
+
+Lo udah ngasih tau dia via:
+
+```ini
+/etc/NetworkManager/conf.d/dns.conf
+[main]
+dns=none
+```
+
+Artinya:
+
+- **NetworkManager gak akan overwrite `/etc/resolv.conf` lagi**
+    
+- Jadi, isinya bakal tetap **persis sesuai** yang lo tulis manual:
+    
+    ```bash
+    echo "nameserver 8.8.8.8" > /etc/resolv.conf
+    echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+    ```
+    
+
+---
+
+## 📌 Tambahan penting:
+
+### Kalau lo belum set `dns=none`, maka:
+
+- NetworkManager akan tetep pakai `dns=default` (atau `dns=systemd-resolved` kalau systemd-resolved aktif)
+    
+- Itu bisa bikin `/etc/resolv.conf` di-_symlink_ ke:
+    
+    - `/run/systemd/resolve/stub-resolv.conf`
+        
+    - `/var/run/NetworkManager/resolv.conf`
+        
+    - Dan itu artinya isi DNS lo bisa berubah otomatis (biasanya dari DHCP)
+        
+
+---
+
+## ✅ Kesimpulan
+
+|Kondisi|`resolv.conf` dikunci?|DNS bisa berubah?|
+|---|---|---|
+|❌ NetworkManager belum diinstall|✅ Ya (pakai `chattr +i`)|❗ Bisa (dari DHCP)|
+|✅ NetworkManager aktif + `dns=none`|❌ Tidak perlu|❌ Tidak akan berubah|
+
+---
+
+Mau gue buatin script pintar auto-setup DNS post-install Arch Linux biar langsung aman & clean?

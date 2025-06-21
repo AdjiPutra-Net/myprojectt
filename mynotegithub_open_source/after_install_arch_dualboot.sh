@@ -26,6 +26,8 @@ systemctl enable --now NetworkManager
 # Tunggu sebentar biar NetworkManager siap
 sleep 2
 
+chattr -i /etc/resolv.conf
+
 # Cek koneksi
 echo ""
 echo "🌐 Cek koneksi internet..."

@@ -74,234 +74,169 @@ fi
 
 #!/bin/bash
 
+# ============================================
+# 💽 Tahap 3: Partisi Disk - Only Partitioning
+# ============================================
+
 echo -e "\n💽 \033[1mTahap 3: Partisi Disk Arch Linux\033[0m"
 echo "-------------------------------------------"
 
-# Tampilkan disk tanpa loop device
-echo -e "\n🧠 Daftar disk fisik tersedia:"
-lsblk -dpno NAME,SIZE,MODEL | grep -v loop
+# Menampilkan disk fisik real (tanpa loop & USB kecil)
+echo -e "\n🧠 \033[1mDaftar Disk yang Terdeteksi:\033[0m"
+lsblk -dpno NAME,SIZE,MODEL | grep -vE 'loop|boot|rpmb|mmcblk|sr0'
 
-# Pilih disk target
+# Input disk target
 echo ""
-read -rp "Masukkan nama disk target (misal /dev/sda atau /dev/nvme0n1): " disk
+read -rp "🖋️  Masukkan nama disk target (misal /dev/sda /dev/nvme0n1): " disk
 
 # Validasi disk
 if [[ ! -b "$disk" ]]; then
-  echo -e "❌ \033[1;31mDisk tidak valid! Pastikan input misalnya /dev/sda atau /dev/nvme0n1.\033[0m"
+  echo -e "❌ \033[1;31mDisk tidak valid!\033[0m Pastikan formatnya /dev/sdX atau /dev/nvmeXn1"
   exit 1
 fi
 
-# Konfirmasi user
-echo -e "\n⚠️  \033[1;33mPERHATIAN!\033[0m Semua data di $disk bisa hilang kalau kamu format."
-read -rp "Lanjutkan membuat partisi di $disk? [y/N]: " lanjut
+# Konfirmasi user sebelum lanjut
+echo -e "\n⚠️  \033[1;33mPERINGATAN!\033[0m Semua data di $disk bisa hilang kalau kamu format."
+read -rp "Lanjut buat partisi manual di $disk dengan cfdisk? [y/N]: " lanjut
 lanjut=${lanjut,,}
 if [[ "$lanjut" != "y" && "$lanjut" != "yes" ]]; then
-  echo "❎ Batalin. Kembali ke menu awal."
+  echo "❎ Batalin. Keluar dari tahap partisi."
   exit 0
 fi
 
-# Deteksi apakah ada partisi EFI
-echo ""
-echo "🔍 Mengecek partisi EFI dari OS lain (misal Windows)..."
-efi_detected=$(blkid | grep "vfat" | grep -iE "boot|efi")
+# Deteksi partisi EFI dari OS lain (misalnya Windows)
+echo -e "\n🔍 Mengecek apakah ada partisi EFI (dari OS lain)..."
+efi_detected=$(blkid | grep -iE 'vfat' | grep -iE 'boot|efi')
 
 if [[ -n "$efi_detected" ]]; then
-  echo -e "✅ Ditemukan partisi EFI:\n$efi_detected"
-  efi_exists=true
+  echo -e "✅ \033[1;32mPartisi EFI terdeteksi:\033[0m"
+  echo "$efi_detected"
 else
-  echo -e "⚠️  \033[1;33mTidak ditemukan partisi EFI!\033[0m Akan dibuat manual saat partisi nanti."
-  efi_exists=false
+  echo -e "⚠️  \033[1;33mTidak ditemukan partisi EFI.\033[0m Akan dibuat secara manual."
 fi
 
-# Deteksi tipe skema partisi (GPT/MBR)
-part_type=$(parted -s "$disk" print | grep "Partition Table" | awk '{print $3}')
-echo -e "\n📑 Skema partisi: \033[1m${part_type^^}\033[0m (rekomendasi: GPT)"
+# Deteksi skema partisi (GPT/MBR)
+part_scheme=$(parted -s "$disk" print | grep "Partition Table" | awk '{print $3}')
+echo -e "\n📑 Skema Partisi Saat Ini: \033[1;36m${part_scheme^^}\033[0m"
 
-# Mulai cfdisk
-echo ""
-echo "📦 Membuka tool partisi interaktif: cfdisk"
-echo "📌 Tips: Buat minimal partisi EFI (300MB, FAT32) dan Root (ext4)"
-echo "       Tambahkan Home & Swap opsional"
+# Panduan partisi
+echo -e "\n📋 \033[1mPanduan Buat Partisi:\033[0m"
+echo "   🟢 EFI    : 300M (type: EFI System)"
+echo "   🔵 Root   : 20G - 100G (type: Linux filesystem)"
+echo "   🟣 Home   : Sisa space (opsional)"
+echo "   🔴 Swap   : 2G - 8G (opsional, type: Linux swap)"
+
+# Jalankan cfdisk
+echo -e "\n🚀 Menjalankan cfdisk di $disk..."
 sleep 2
 cfdisk "$disk"
 
-# Tampilkan hasil
-echo -e "\n✅ Selesai partisi manual via cfdisk. Hasil:"
+# Tampilkan hasil partisi
+echo -e "\n✅ \033[1mSelesai membuat partisi manual via cfdisk.\033[0m"
 lsblk "$disk" -o NAME,FSTYPE,SIZE,TYPE,MOUNTPOINT
 
-echo -e "\n💡 Lanjut ke tahap berikutnya: format dan mount partisi!"
-
-# Safety check
-if [[ ! -b "$disk" ]]; then
-  echo "❌ Disk tidak valid!"
-  exit 1
-fi
+echo -e "\n📦 \033[1mLanjut ke tahap berikutnya: Format & Mount\033[0m (jangan lupa simpan nama partisinya!)"
 
 #!/bin/bash
-# ========================================
-# 🔧 Smart Manual Partitioning & Formatting
-# ========================================
 
-echo ""
-echo "🔍 Deteksi disk utama lo..."
-lsblk -d -o NAME,SIZE,MODEL
-read -rp "Masukkan disk yang mau dipartisi (misal: /dev/sda atau /dev/nvme0n1): " disk
+# ====================================================
+# 🔁 Tahap 4: Format dan Mount Partisi (Smart Auto)
+# ====================================================
+echo -e "\n🔁 \e[1mTahap 4: Format dan Mount Partisi\e[0m"
+echo "----------------------------------------------------"
 
-echo ""
-read -p "Lanjutkan membuat partisi di $disk? (y/N): " lanjut
-[[ "$lanjut" =~ ^[Yy]$ ]] || exit 0
-
-# Buka partisi editor
-echo ""
-echo "📦 Membuka cfdisk (tool partisi interaktif)..."
-echo "❗ Disarankan pilih skema GPT!"
-sleep 2
-cfdisk "$disk"
-
-echo ""
-echo "📄 Preview partisi setelah edit:"
-lsblk "$disk"
-
-# Deteksi EFI (vfat + size wajar)
-efi_auto=$(lsblk -o NAME,FSTYPE,SIZE -r | grep -i "vfat" | awk '$3 ~ /[1-6][0-9]?[0-9]?M/ || $3 ~ /1G/ {print "/dev/"$1}' | head -n1)
+# ===============================
+# 🧠 Auto-detect partisi EFI
+# ===============================
+efi_auto=$(lsblk -o NAME,FSTYPE,SIZE,MOUNTPOINT -r | grep -i "vfat" | awk '{print "/dev/"$1}' | head -n1)
 efi_exists=false
 
-if [[ -n $efi_auto ]]; then
-  echo ""
-  echo "✅ Terdeteksi partisi EFI: $efi_auto"
-  efi_exists=true
+if [[ -n "$efi_auto" ]]; then
+    echo -e "✅ Partisi EFI terdeteksi otomatis: \e[1m$efi_auto\e[0m"
+    efi_exists=true
 else
-  echo ""
-  echo "⚠️ Tidak ditemukan partisi EFI otomatis."
+    echo -e "⚠️  Tidak ada partisi EFI terdeteksi otomatis."
 fi
 
-# Input partisi manual
+# ===============================
+# 📥 Input manual partisi lainnya
+# ===============================
 echo ""
-read -rp "Masukkan partisi ROOT (contoh: /dev/sda2): " root_part
-read -rp "Masukkan partisi HOME (opsional): " home_part
-read -rp "Masukkan partisi SWAP (opsional): " swap_part
+read -rp "🖋️  Masukkan partisi ROOT (misal: /dev/sda2): " root_part
+read -rp "📦 Masukkan partisi HOME (opsional, tekan Enter jika tidak ada): " home_part
+read -rp "📀 Masukkan partisi SWAP (opsional, tekan Enter jika tidak ada): " swap_part
 
+# Kalau belum terdeteksi EFI otomatis, minta input manual
 if [[ $efi_exists == false ]]; then
-  read -rp "Masukkan partisi EFI BARU (misal: /dev/sda1): " efi_part
+    read -rp "🧬 Masukkan partisi EFI (misal: /dev/sda1): " efi_part
 else
-  efi_part=$efi_auto
+    efi_part=$efi_auto
 fi
 
-# Validasi partisi ada
+# ===============================
+# ✅ Validasi semua partisi
+# ===============================
 for part in "$root_part" "$home_part" "$swap_part" "$efi_part"; do
-  [[ -n "$part" ]] && [[ ! -b "$part" ]] && echo "❌ Error: $part bukan partisi valid!" && exit 1
+    if [[ -n "$part" && ! -b "$part" ]]; then
+        echo -e "❌ \e[1;31m$part bukan partisi valid!\e[0m Cek lagi dengan lsblk."
+        exit 1
+    fi
 done
 
-echo ""
-echo "🧹 Mulai proses format partisi..."
+# ===============================
+# 🧹 Format semua partisi
+# ===============================
+echo -e "\n🧹 \e[1mMemformat partisi...\e[0m"
 
-# EFI
-if [[ -n $efi_part ]]; then
-  echo "📁 Format EFI: $efi_part"
-  mkfs.fat -F32 "$efi_part"
+# Format EFI
+if [[ -n "$efi_part" ]]; then
+    echo "📁 Format EFI: $efi_part"
+    mkfs.fat -F32 "$efi_part"
 fi
 
-# ROOT
+# Format ROOT
 echo "📁 Format ROOT: $root_part"
 mkfs.ext4 "$root_part"
 
-# HOME
-if [[ -n $home_part ]]; then
-  echo "📁 Format HOME: $home_part"
-  mkfs.ext4 "$home_part"
+# Format HOME (opsional)
+if [[ -n "$home_part" ]]; then
+    echo "📁 Format HOME: $home_part"
+    mkfs.ext4 "$home_part"
 fi
 
-# SWAP
-if [[ -n $swap_part ]]; then
-  echo "📁 Format SWAP: $swap_part"
-  mkswap "$swap_part"
-  swapon "$swap_part"
+# Setup SWAP (opsional)
+if [[ -n "$swap_part" ]]; then
+    echo "📀 Setup SWAP: $swap_part"
+    mkswap "$swap_part"
+    swapon "$swap_part"
 fi
 
-echo ""
-echo "✅ Semua partisi berhasil diformat!"
-echo "🔜 Siap lanjut ke tahap mount dan install sistem dasar Arch Linux."
+# ===============================
+# 🔧 Mounting Partisi
+# ===============================
+echo -e "\n🔧 \e[1mMounting partisi ke /mnt...\e[0m"
 
-#!/bin/bash
-
-# ===================================
-# 🔁 Smart Mount Script Arch Linux
-# ===================================
-
-echo -e "\n\033[1;36m🔁 Tahap 4: Mount Partisi Arch Linux\033[0m"
-echo "---------------------------------------------"
-
-# Fungsi cek partisi valid
-function cek_partisi() {
-  if [[ ! -b "$1" ]]; then
-    echo -e "\033[1;31m❌ Error: $1 bukan partisi valid!\033[0m"
-    exit 1
-  fi
-}
-
-# Input partisi
-read -rp "Masukkan partisi ROOT (misal /dev/sda5): " root_part
-cek_partisi "$root_part"
-
-read -rp "Masukkan partisi HOME (enter jika tidak pakai): " home_part
-[[ -n "$home_part" ]] && cek_partisi "$home_part"
-
-read -rp "Masukkan partisi EFI (kosongkan untuk deteksi otomatis): " efi_part
-if [[ -z "$efi_part" ]]; then
-  efi_part=$(lsblk -o NAME,FSTYPE -r | grep -i vfat | head -n1 | awk '{print "/dev/"$1}')
-  if [[ -n "$efi_part" ]]; then
-    echo -e "✅ Deteksi otomatis EFI: \033[1;32m$efi_part\033[0m"
-  else
-    echo -e "\033[1;33m⚠️  Tidak bisa deteksi otomatis EFI.\033[0m"
-    read -rp "Masukkan manual: " efi_part
-  fi
-fi
-cek_partisi "$efi_part"
-
-read -rp "Masukkan partisi SWAP (enter jika tidak pakai): " swap_part
-[[ -n "$swap_part" ]] && cek_partisi "$swap_part"
-
-# Konfirmasi format
-echo -e "\n⚠️  \033[1;33mAkan diformat: $root_part $home_part\033[0m"
-read -rp "Lanjut format partisi tersebut? (y/N): " konfirmasi
-[[ "$konfirmasi" =~ ^[Yy]$ ]] || exit 0
-
-# Mulai proses
-echo -e "\n📦 Format dan mount partisi..."
-
-# ROOT
-echo -e "🔧 Format \033[1m$root_part\033[0m sebagai ext4..."
-mkfs.ext4 "$root_part"
 mount "$root_part" /mnt
-echo "✅ ROOT mounted ke /mnt"
 
-# EFI
+# Buat direktori boot/efi kalau belum ada
 mkdir -p /mnt/boot/efi
 mount "$efi_part" /mnt/boot/efi
-echo "✅ EFI mounted ke /mnt/boot/efi"
 
-# HOME
+# Mount HOME (opsional)
 if [[ -n "$home_part" ]]; then
-  echo "🔧 Format $home_part sebagai ext4..."
-  mkfs.ext4 "$home_part"
-  mkdir -p /mnt/home
-  mount "$home_part" /mnt/home
-  echo "✅ HOME mounted ke /mnt/home"
-else
-  echo "⏩ HOME dilewati."
+    mkdir -p /mnt/home
+    mount "$home_part" /mnt/home
 fi
 
-# SWAP
-if [[ -n "$swap_part" ]]; then
-  echo "💾 Format & aktifkan SWAP: $swap_part"
-  mkswap "$swap_part"
-  swapon "$swap_part"
-else
-  echo "⏩ SWAP dilewati."
-fi
+# ===============================
+# ✅ Hasil Akhir
+# ===============================
+echo -e "\n✅ \e[1mSemua partisi berhasil diformat & dimount.\e[0m"
+echo -e "📋 Status mount:"
+lsblk -o NAME,MOUNTPOINT,FSTYPE,SIZE | grep -E 'mnt|NAME'
 
-echo -e "\n\033[1;32m✅ Semua partisi berhasil di-mount!\033[0m"
-lsblk -o NAME,FSTYPE,SIZE,MOUNTPOINT
+echo -e "\n🚀 Siap lanjut ke tahap instalasi sistem dasar Arch Linux!"
+
 
 #!/bin/bash
 

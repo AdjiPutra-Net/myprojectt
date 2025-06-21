@@ -6,16 +6,27 @@
 echo -e "\n🧹 \e[1mTahap 11: Exit, Unmount & Reboot\e[0m"
 echo "------------------------------------------"
 
-# ✅ Deteksi apakah kita MASIH di chroot → kalau iya: batal
+# ✅ Deteksi apakah MASIH di chroot (gandeng 2 cara biar lebih akurat)
+in_chroot_inode_check=false
+in_chroot_mountinfo=false
+
 if [[ "$(stat -c %d:%i /)" != "$(stat -c %d:%i /proc/1/root)" ]]; then
-    echo -e "⚠️  Saat ini lo masih berada di dalam lingkungan \e[1mchroot\e[0m (/mnt)."
+    in_chroot_inode_check=true
+fi
+
+if grep -q '/mnt' /proc/1/mountinfo; then
+    in_chroot_mountinfo=true
+fi
+
+if $in_chroot_inode_check || $in_chroot_mountinfo; then
+    echo -e "⚠️  \e[1mKamu masih ada di lingkungan chroot (/mnt)\e[0m."
     echo -e "🔚 Untuk melanjutkan:"
     echo -e "   ➜ Ketik perintah: \e[1mexit\e[0m"
-    echo -e "   ➜ Lalu jalankan script ini lagi dari \e[1mlive ISO (di luar chroot)\e[0m"
+    echo -e "   ➜ Kemudian jalankan script ini dari \e[1mLive ISO (di luar chroot)\e[0m"
     exit 1
 fi
 
-# ✅ Unmount semua partisi dari /mnt jika masih ter-mount
+# ✅ Unmount semua partisi dari /mnt
 if ! mountpoint -q /mnt; then
     echo "❗ /mnt sudah tidak ter-mount. Mungkin udah pernah di-unmount sebelumnya."
 else
@@ -38,7 +49,7 @@ echo "   - VirtualBox/VMWare? ➜ Detach ISO dari pengaturan Storage"
 
 # ✅ Konfirmasi reboot
 read -rp $'\n🔁 Mau reboot sekarang? [Y/n]: ' jawab
-jawab=${jawab,,} # lowercase semua
+jawab=${jawab,,}
 
 if [[ "$jawab" =~ ^(y|yes)?$ || "$jawab" == "" ]]; then
     echo -e "\n🚀 Rebooting sekarang..."

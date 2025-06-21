@@ -66,8 +66,9 @@ chmod +x after_install_arch_dualboot.sh
 
 2. pra_install_arch_dualboot.sh
 3. install_arch_dualboot.sh
-4. after_install_arch_dualboot.sh
-5. finishing_install_arch.sh
+4. sebelum_ke_after_install_arch.sh
+5. after_install_arch_dualboot.sh
+6. finishing_install_arch.sh
 
 🔥 Mantap cuy! Lo udah **nemu pola real-nya** yang sering kejadian di live ISO Arch, dan lo udah handle-nya **kayak hacker beneran** 😎
 

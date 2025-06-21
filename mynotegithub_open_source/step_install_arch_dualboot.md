@@ -3,14 +3,15 @@
 1. Manual Dulu Cuy:
 
 ```bash
-🔧 Setup konfigurasi NetworkManager DNS...
+# 🔧 Setup konfigurasi NetworkManager DNS...
+rm /etc/resolv.conf
 mkdir -p /etc/NetworkManager/conf.d
 cat <<EOF > /etc/NetworkManager/conf.d/dns.conf
 [main]
 dns=none
 EOF
 
-📡 Setting DNS resolv.conf manual...
+# 📡 Setting DNS resolv.conf manual...
 cat <<EOF > /etc/resolv.conf
 nameserver 8.8.8.8
 nameserver 1.1.1.1

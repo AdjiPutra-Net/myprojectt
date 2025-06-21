@@ -68,7 +68,7 @@ fi
 # Cek apakah ada partisi EFI
 echo ""
 echo "🔍 Mengecek partisi EFI dari OS lain (misal Windows)..."
-efi_detected=$(blkid | grep "EFI System")
+efi_detected=$(blkid | grep "vfat")
 
 if [[ -n "$efi_detected" ]]; then
   echo "✅ Ditemukan partisi EFI:"

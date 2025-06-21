@@ -235,23 +235,6 @@ fi
 # ==============================
 echo -e "\n✅ \033[1mGRUB berhasil diinstall dan dikonfigurasi!\033[0m"
 
-#!/bin/bash
 
-# ==============================
-# 📢 Notifikasi akhir instalasi
-# ==============================
-
-echo -e "\n🎉 \e[1mInstalasi Arch Linux Selesai!\e[0m"
-echo "--------------------------------------------------"
-echo "📦 Semua tahapan (timezone, locale, user, GRUB) berhasil diset."
-
-echo -e "\n🚪 \e[1mLangkah Berikutnya:\e[0m"
-echo "  ➤ 1. Ketik: \e[1mexit\e[0m untuk keluar dari lingkungan chroot"
-echo "  ➤ 2. Setelah keluar dari chroot,"
-echo "       jalankan: \e[1m./sebelum_ke_after_install_arch.sh\e[0m"
-
-echo -e "\n⚠️  \e[1mPENTING Sebelum Reboot:\e[0m"
-echo "   ✅ CABUT USB atau detach ISO sebelum reboot!"
-echo "   ❌ Kalau tidak, nanti booting balik ke installer Arch ISO lagi."
-
-echo -e "\n✅ \e[1mSelesai. Sampai ketemu di Arch Linux kamu!\e[0m 🚀"
+exit
+umount -R /mnt

@@ -1,60 +1,90 @@
 #!/bin/bash
+# ========================================
+# 🧩 Tahap 8: Setting Sistem Arch Linux
+# ========================================
 
-echo "🧩 Tahap 8: Setting Sistem"
-echo "------------------------------"
+echo -e "\n🧩 \033[1mTahap 8: Konfigurasi Sistem Dasar\033[0m"
+echo "-------------------------------------------"
 
-# ========================
-# 8.1 Set Zona Waktu
-# ========================
+# =========================
+# 8.1 Zona Waktu (Asia/Jakarta)
+# =========================
 echo "🌏 Setting zona waktu ke Asia/Jakarta..."
 ln -sf /usr/share/zoneinfo/Asia/Jakarta /etc/localtime
 hwclock --systohc
+echo "✅ Zona waktu diset & hwclock disinkron"
 
-# ========================
+# =========================
 # 8.2 Locale + Keymap
-# ========================
-echo "🗣️  Mengatur locale ke en_US.UTF-8..."
+# =========================
+echo -e "\n🗣️  Mengatur Locale ke en_US.UTF-8..."
 
-# Uncomment en_US.UTF-8 UTF-8
-sed -i 's/^#\(en_US.UTF-8 UTF-8\)/\1/' /etc/locale.gen
+if grep -q '^#en_US.UTF-8 UTF-8' /etc/locale.gen; then
+  sed -i 's/^#\(en_US.UTF-8 UTF-8\)/\1/' /etc/locale.gen
+fi
 
-# Generate locale
 locale-gen
-
-# Set default locale
 echo "LANG=en_US.UTF-8" > /etc/locale.conf
+echo "✅ Locale sudah digenerate dan diset default"
 
-# Input keymap keyboard
-read -p "🧠 Mau pake keymap keyboard apa? (default: us): " keymap
+# Keymap keyboard
+read -rp "⌨️  Mau pake keymap keyboard apa? (default: us): " keymap
 keymap=${keymap:-us}
-echo "KEYMAP=$keymap" > /etc/vconsole.conf
-echo "✅ Keymap diset ke: $keymap"
 
-# ========================
-# 8.3 Hostname
-# ========================
-read -p "📛 Masukkan nama hostname sistem kamu (default: archlinux): " hostname
+# Validasi keymap yang tersedia
+if localectl list-keymaps | grep -qx "$keymap"; then
+  echo "KEYMAP=$keymap" > /etc/vconsole.conf
+  echo "✅ Keymap diset ke: $keymap"
+else
+  echo "⚠️  Keymap '$keymap' tidak valid, fallback ke 'us'"
+  echo "KEYMAP=us" > /etc/vconsole.conf
+fi
+
+# =========================
+# 8.3 Hostname + /etc/hosts
+# =========================
+read -rp "📛 Masukkan hostname sistem kamu (default: archlinux): " hostname
 hostname=${hostname:-archlinux}
 
 echo "$hostname" > /etc/hostname
-echo "127.0.0.1       localhost" > /etc/hosts
-echo "::1             localhost" >> /etc/hosts
-echo "127.0.1.1       $hostname.localdomain $hostname" >> /etc/hosts
 
-echo ""
+cat <<EOF > /etc/hosts
+127.0.0.1       localhost
+::1             localhost
+127.0.1.1       $hostname.localdomain $hostname
+EOF
+
 echo "✅ Hostname diset ke: $hostname"
-echo "✅ File /etc/hosts telah dikonfigurasi"
+echo "✅ File /etc/hosts dikonfigurasi"
+
+# =========================
+# 8.4 Ringkasan
+# =========================
+echo -e "\n📋 \033[1mRingkasan Konfigurasi:\033[0m"
+echo "-------------------------------------------"
+echo "🕒 Zona Waktu   : Asia/Jakarta"
+echo "🌍 Locale       : en_US.UTF-8"
+echo "⌨️  Keymap       : $keymap"
+echo "💻 Hostname     : $hostname"
+
+echo -e "\n✅ \033[1mTahap 8 selesai.\033[0m Siap lanjut ke user setup atau bootloader install."
 
 #!/bin/bash
 
-echo "🔐 Tahap 9: Buat User & Set Password"
-echo "----------------------------------------"
+echo -e "\n🔐 \033[1mTahap 9: Buat User & Set Password\033[0m"
+echo "--------------------------------------------"
 
 # ========================
-# 1. Set password root
+# 1. Set password root & user
 # ========================
-read -s -p "🔑 Masukkan password untuk root & user: " userpass
-echo ""
+while true; do
+  read -s -p "🔑 Masukkan password untuk root & user: " userpass
+  echo ""
+  read -s -p "🔁 Konfirmasi ulang password: " confirm
+  echo ""
+  [[ "$userpass" == "$confirm" ]] && break
+  echo "❌ Password tidak cocok. Coba lagi."
+done
 
 echo "🔧 Mengatur password untuk root..."
 echo "root:$userpass" | chpasswd
@@ -65,194 +95,180 @@ echo "root:$userpass" | chpasswd
 read -p "👤 Masukkan nama username (default: adjiarch): " username
 username=${username:-adjiarch}
 
-# Validasi username
-if [[ "$username" =~ [[:space:]] ]]; then
-  echo "❌ Username tidak boleh mengandung spasi!"
+# Validasi: tanpa spasi/simbol, hanya huruf/angka/underscore
+if ! [[ "$username" =~ ^[a-z_][a-z0-9_-]*$ ]]; then
+  echo "❌ Username tidak valid! Gunakan huruf kecil, angka, dan underscore saja."
   exit 1
 fi
 
-echo "📦 Membuat user: $username"
-useradd -mG wheel "$username"
-echo "$username:$userpass" | chpasswd
+# Cek apakah user sudah ada
+if id "$username" &>/dev/null; then
+  echo "⚠️  User $username sudah ada. Lewatin pembuatan user baru."
+else
+  echo "📦 Membuat user baru: $username"
+  useradd -mG wheel "$username"
+  echo "$username:$userpass" | chpasswd
+  echo "✅ User berhasil dibuat dan ditambahkan ke grup wheel"
+fi
 
 # ========================
-# 3. Aktifkan akses sudo
+# 3. Akses sudo grup wheel
 # ========================
 echo "🛠️ Mengaktifkan akses sudo untuk grup wheel..."
 
-# Backup dulu visudo
+# Backup sudoers
 cp /etc/sudoers /etc/sudoers.bak
 
-# Gunakan sed untuk uncomment baris %wheel
-sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
+# Ubah hanya jika belum aktif
+if grep -q '^# %wheel ALL=(ALL:ALL) ALL' /etc/sudoers; then
+  sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
+  echo "✅ Akses sudo grup wheel sudah diaktifkan"
+else
+  echo "ℹ️  Akses sudo untuk grup wheel sudah aktif sebelumnya"
+fi
 
+# Validasi sudoers
+if ! visudo -c &>/dev/null; then
+  echo "❌ ERROR di file /etc/sudoers. Mengembalikan dari backup!"
+  cp /etc/sudoers.bak /etc/sudoers
+else
+  echo "✅ File /etc/sudoers valid"
+fi
+
+# ========================
+# 4. Ringkasan
+# ========================
 echo ""
-echo "✅ User $username berhasil dibuat dengan akses sudo."
-echo "✅ Password root & user telah diatur."
+echo "✅ \033[1mSelesai Tahap 9:\033[0m"
+echo "👤 Username: $username"
+echo "🛡️  Akses sudo: Aktif (via grup wheel)"
+echo "🔐 Password root & user sudah diset"
 
 #!/bin/bash
 
-echo "🔌 Tahap 10: Install GRUB Bootloader"
-echo "---------------------------------------"
+echo -e "\n🔌 \033[1mTahap 10: Install GRUB Bootloader\033[0m"
+echo "-------------------------------------------"
 
-# ==========================
+# ==============================
 # Deteksi Mode Boot
-# ==========================
+# ==============================
 if [ -d /sys/firmware/efi ]; then
-  echo "✅ Mode Boot: UEFI terdeteksi"
+  echo "✅ Mode Boot: UEFI terdeteksi (via /sys/firmware/efi)"
   boot_mode="UEFI"
 else
   echo "✅ Mode Boot: BIOS (Legacy) terdeteksi"
   boot_mode="BIOS"
 fi
 
-# ==========================
-# Konfirmasi atau Override
-# ==========================
-read -p "🧠 Gunakan mode boot yang terdeteksi ($boot_mode)? [Y/n]: " mode_confirm
-mode_confirm=${mode_confirm,,} # to lowercase
-if [[ "$mode_confirm" == "n" ]]; then
-  echo "⚠️  Oke, pilih mode secara manual:"
+# ==============================
+# Konfirmasi / Override Manual
+# ==============================
+read -p "🧠 Gunakan mode boot yang terdeteksi ($boot_mode)? [Y/n]: " confirm
+confirm=${confirm,,}
+if [[ "$confirm" == "n" ]]; then
+  echo "⚠️  Pilih mode manual:"
   echo "1. UEFI"
   echo "2. BIOS (Legacy)"
-  read -p "Pilih [1/2]: " manual_mode
-  if [[ "$manual_mode" == "1" ]]; then
-    boot_mode="UEFI"
-  elif [[ "$manual_mode" == "2" ]]; then
-    boot_mode="BIOS"
-  else
-    echo "❌ Pilihan tidak valid. Batal."
-    exit 1
-  fi
+  read -p "🔢 Pilih [1/2]: " manual_mode
+  [[ "$manual_mode" == "1" ]] && boot_mode="UEFI"
+  [[ "$manual_mode" == "2" ]] && boot_mode="BIOS"
 fi
 
-# ==========================
-# Proses Install GRUB
-# ==========================
+# ==============================
+# Validasi mount point
+# ==============================
+if [[ ! -d /boot ]]; then
+  echo "❌ Folder /boot tidak ditemukan. Pastikan partisi sudah di-mount!"
+  exit 1
+fi
+
+# ==============================
+# Install GRUB Sesuai Mode
+# ==============================
 if [[ "$boot_mode" == "UEFI" ]]; then
   echo "🛠️ Menginstall GRUB untuk UEFI..."
-  grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=ArchLinux
-else
-  echo "💿 Mode BIOS - Masukkan disk utama (contoh: /dev/sda atau /dev/nvme0n1)"
-  read -p "📦 Disk utama untuk install GRUB (tanpa angka): " target_disk
-  if [[ ! -b "$target_disk" ]]; then
-    echo "❌ Disk tidak valid. Pastikan formatnya /dev/sdX atau /dev/nvme0nX"
+  efidir=$(findmnt -no TARGET /boot/efi)
+  if [[ -z "$efidir" ]]; then
+    echo "❌ Partisi EFI belum di-mount ke /boot/efi. Batal."
     exit 1
   fi
-  echo "🛠️ Menginstall GRUB untuk BIOS ke $target_disk..."
-  grub-install --target=i386-pc "$target_disk"
+  grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=ArchLinux --recheck
+else
+  echo ""
+  lsblk -dpno NAME,SIZE | grep -v loop
+  read -p "💿 Masukkan disk utama (contoh: /dev/sda /dev/nvme0n1): " target_disk
+  if [[ ! -b "$target_disk" ]]; then
+    echo "❌ Disk tidak valid."
+    exit 1
+  fi
+  echo "🛠️ Install GRUB ke MBR (BIOS)..."
+  grub-install --target=i386-pc --recheck "$target_disk"
 fi
 
-# ==========================
-# Generate GRUB Config
-# ==========================
-echo "⚙️  Menggenerate konfigurasi GRUB..."
+# ==============================
+# Generate Config GRUB
+# ==============================
+echo "⚙️  Membuat konfigurasi GRUB..."
 grub-mkconfig -o /boot/grub/grub.cfg
 
+# ==============================
+# Cek os-prober (optional)
+# ==============================
+if [[ -f /etc/default/grub ]]; then
+  if grep -q 'GRUB_DISABLE_OS_PROBER=true' /etc/default/grub; then
+    echo ""
+    echo "⚠️  os-prober dinonaktifkan. Aktifkan jika ingin deteksi OS lain (Windows)."
+    echo "Edit /etc/default/grub dan ubah: GRUB_DISABLE_OS_PROBER=false"
+    echo "Kemudian jalankan ulang: grub-mkconfig -o /boot/grub/grub.cfg"
+  fi
+fi
+
 echo ""
-echo "✅ GRUB berhasil diinstall dan dikonfigurasi!"
+echo "✅ \033[1mGRUB berhasil diinstall dan dikonfigurasi!\033[0m"
 
 #!/bin/bash
 
-echo "🔌 Tahap 10: Install GRUB Bootloader"
-echo "---------------------------------------"
-
-# ==========================
-# Deteksi Mode Boot
-# ==========================
-if [ -d /sys/firmware/efi ]; then
-  echo "✅ Mode Boot: UEFI terdeteksi"
-  boot_mode="UEFI"
-else
-  echo "✅ Mode Boot: BIOS (Legacy) terdeteksi"
-  boot_mode="BIOS"
-fi
-
-# ==========================
-# Konfirmasi atau Override
-# ==========================
-read -p "🧠 Gunakan mode boot yang terdeteksi ($boot_mode)? [Y/n]: " mode_confirm
-mode_confirm=${mode_confirm,,} # to lowercase
-if [[ "$mode_confirm" == "n" ]]; then
-  echo "⚠️  Oke, pilih mode secara manual:"
-  echo "1. UEFI"
-  echo "2. BIOS (Legacy)"
-  read -p "Pilih [1/2]: " manual_mode
-  if [[ "$manual_mode" == "1" ]]; then
-    boot_mode="UEFI"
-  elif [[ "$manual_mode" == "2" ]]; then
-    boot_mode="BIOS"
-  else
-    echo "❌ Pilihan tidak valid. Batal."
-    exit 1
-  fi
-fi
-
-# ==========================
-# Proses Install GRUB
-# ==========================
-if [[ "$boot_mode" == "UEFI" ]]; then
-  echo "🛠️ Menginstall GRUB untuk UEFI..."
-  grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=ArchLinux
-else
-  echo "💿 Mode BIOS - Masukkan disk utama (contoh: /dev/sda atau /dev/nvme0n1)"
-  read -p "📦 Disk utama untuk install GRUB (tanpa angka): " target_disk
-  if [[ ! -b "$target_disk" ]]; then
-    echo "❌ Disk tidak valid. Pastikan formatnya /dev/sdX atau /dev/nvme0nX"
-    exit 1
-  fi
-  echo "🛠️ Menginstall GRUB untuk BIOS ke $target_disk..."
-  grub-install --target=i386-pc "$target_disk"
-fi
-
-# ==========================
-# Generate GRUB Config
-# ==========================
-echo "⚙️  Menggenerate konfigurasi GRUB..."
-grub-mkconfig -o /boot/grub/grub.cfg
-
-echo ""
-echo "✅ GRUB berhasil diinstall dan dikonfigurasi!"
-
-#!/bin/bash
-
-echo -e "🧹 \e[1mTahap 12: Exit, Unmount & Reboot\e[0m"
+echo -e "\n🧹 \033[1mTahap 12: Exit, Unmount & Reboot\033[0m"
 echo "------------------------------------------"
 
 # Deteksi apakah masih di dalam chroot (dijalankan dari arch-chroot)
-if grep -q '/mnt' /proc/1/mounts; then
-    echo "⚠️  Saat ini lo masih berada di dalam lingkungan chroot (/mnt)."
-    echo "🔚 Untuk melanjutkan instalasi:"
-    echo "   ➜ Ketik perintah: \e[1mexit\e[0m"
-    echo "   ➜ Lalu jalankan script ini lagi dari live ISO (di luar chroot)"
+if grep -q '/mnt' /proc/1/mounts && [[ "$(realpath /proc/1/root)" == "/" ]]; then
+    echo "⚠️  Saat ini lo masih berada di dalam lingkungan \033[1mchroot\033[0m (/mnt)."
+    echo "🔚 Untuk melanjutkan:"
+    echo "   ➜ Ketik perintah: \033[1mexit\033[0m"
+    echo "   ➜ Lalu jalankan script ini lagi dari \033[1mlive ISO (di luar chroot)\033[0m"
     exit 1
 fi
 
-# Unmount semua partisi dari /mnt
-echo "🗂️  Unmount semua partisi dari /mnt..."
-umount -R /mnt 2>/dev/null
-
-# Cek status unmount
-if [[ $? -eq 0 ]]; then
-    echo "✅ Semua partisi berhasil di-unmount."
+# Validasi mount point
+if ! mountpoint -q /mnt; then
+    echo "❗ /mnt sudah tidak ter-mount. Mungkin udah pernah di-unmount sebelumnya."
 else
-    echo "⚠️  Beberapa partisi gagal di-unmount atau sudah tidak ter-mount."
-    echo "   ➜ Cek manual dengan: mount | grep mnt"
+    echo "🗂️  Unmount semua partisi dari /mnt..."
+    umount -R /mnt 2>/dev/null
+
+    if [[ $? -eq 0 ]]; then
+        echo "✅ Semua partisi berhasil di-unmount dari /mnt."
+    else
+        echo "⚠️  Beberapa partisi gagal di-unmount atau sudah tidak ter-mount."
+        echo "   ➜ Cek manual dengan: mount | grep mnt"
+    fi
 fi
 
 # Instruksi ke user sebelum reboot
-echo -e "\n📝 \e[1mCatatan Penting Sebelum Reboot:\e[0m"
-echo "✅ Instalasi Arch Linux sudah selesai."
-echo "📦 Sekarang sistem sudah terpasang di hard disk kamu."
-echo "🔌 Silakan CABUT USB/ISO sebelum reboot agar langsung masuk ke sistem Arch Linux yang baru."
+echo -e "\n📋 \033[1mCatatan Penting Sebelum Reboot:\033[0m"
+echo "✅ Instalasi Arch Linux sudah selesai dan sistem sudah terpasang di disk."
+echo "🛑 Pastikan lo \033[1mCABUT USB atau detach ISO\033[0m sebelum reboot:"
+echo "   - Real PC? ➜ Cabut flashdisk/USB bootable"
+echo "   - VirtualBox/VMWare? ➜ Detach ISO image dari optical drive (storage setting)"
 
 # Konfirmasi reboot
 read -rp $'\n🔁 Mau reboot sekarang? [Y/n]: ' jawab
-jawab=${jawab,,}  # konversi ke lowercase
+jawab=${jawab,,}
 
 if [[ "$jawab" =~ ^(y|yes)?$ || "$jawab" == "" ]]; then
-    echo "🚀 Rebooting sekarang..."
-    reboot || echo "⚠️  Gagal reboot otomatis. Ketik manual: reboot"
+    echo -e "\n🚀 Rebooting sekarang..."
+    reboot || echo "⚠️  Reboot gagal. Silakan ketik manual: \033[1mreboot\033[0m"
 else
-    echo "✅ Oke, lo bisa reboot nanti dengan perintah: reboot"
+    echo "✅ Oke, lo bisa reboot nanti dengan perintah: \033[1mreboot\033[0m"
 fi

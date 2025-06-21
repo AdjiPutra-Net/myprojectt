@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================
-# 🐧 Tahap 14: Install AUR Helper (yay & paru)
+# 🐧 Tahap 13: Install AUR Helper (yay & paru)
 # =============================================
 
 set -e

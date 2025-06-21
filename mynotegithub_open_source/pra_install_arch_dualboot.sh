@@ -138,36 +138,6 @@ if [[ ! -b "$disk" ]]; then
 fi
 
 #!/bin/bash
-# ============================================
-# 🔍 Smart EFI Partition Detection Script
-# ============================================
-
-echo ""
-echo "🔎 Mendeteksi partisi EFI (vfat + ukuran cocok)..."
-
-# Cari partisi dengan format FAT32 (vfat) dan ukuran sekitar 100MB–600MB (standar EFI)
-efi_part=$(lsblk -o NAME,FSTYPE,SIZE,MOUNTPOINT -r | grep "vfat" | awk '$3 ~ /[1-6][0-9]?[0-9]?M/ || $3 ~ /1G/ { print $1 }' | head -n1)
-
-if [[ -n "$efi_part" ]]; then
-    efi_device="/dev/$efi_part"
-    echo "✅ Ditemukan kandidat partisi EFI: $efi_device"
-
-    # Cek apakah sudah di-mount
-    mountpoint=$(lsblk -no MOUNTPOINT "$efi_device")
-    if [[ -n "$mountpoint" ]]; then
-        echo "ℹ️  Sudah ter-mount di: $mountpoint"
-    else
-        echo "🔧 Belum ter-mount. Mount sekarang ke /mnt/boot/efi..."
-        mkdir -p /mnt/boot/efi
-        mount "$efi_device" /mnt/boot/efi
-        echo "✅ Berhasil di-mount ke /mnt/boot/efi"
-    fi
-else
-    echo "❌ Gagal mendeteksi partisi EFI."
-    echo "💡 Pastikan partisi sudah diformat FAT32 dan ukurannya sesuai (100MB–600MB atau ~1GB)."
-fi
-
-#!/bin/bash
 # ========================================
 # 🔧 Smart Manual Partitioning & Formatting
 # ========================================

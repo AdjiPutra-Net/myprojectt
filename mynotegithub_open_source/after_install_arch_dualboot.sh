@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================
-# 🔚 Tahap 13: Final Setup Setelah Arch Install
+# 🔚 Tahap 12: Final Setup Setelah Arch Install
 # ============================================
 
 set -e

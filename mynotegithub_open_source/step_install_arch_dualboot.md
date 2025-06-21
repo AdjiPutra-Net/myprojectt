@@ -18,6 +18,50 @@ nameserver 1.1.1.1
 EOF
 
 # lalu setelah itu tunggu 1 menit untuk aktivasi keyring public-key dari archnya, supaya saat kita update/upgrade/hapus/install paket diarchnya tidak error karena belum diaktivasi
+
+pacman -Sy git
+git clone https://github.com/AdjiPutra-Net/myprojectt.git
+cd myprojectt
+cd mynotegithub_open_source/
+chmod +x pra_install_arch_dualboot.sh
+./pra_install_arch_dualboot.sh
+
+pacman -Sy git
+git clone https://github.com/AdjiPutra-Net/myprojectt.git
+cd myprojectt
+cd mynotegithub_open_source/
+chmod +x install_arch_dualboot.sh
+./install_arch_dualboot.sh
+
+# 🔧 Setup konfigurasi NetworkManager DNS...
+rm /etc/resolv.conf
+mkdir -p /etc/NetworkManager/conf.d
+cat <<EOF > /etc/NetworkManager/conf.d/dns.conf
+[main]
+dns=none
+EOF
+
+# 📡 Setting DNS resolv.conf manual...
+cat <<EOF > /etc/resolv.conf
+nameserver 8.8.8.8
+nameserver 1.1.1.1
+EOF
+
+# lalu setelah itu tunggu 1 menit untuk aktivasi keyring public-key dari archnya, supaya saat kita update/upgrade/hapus/install paket diarchnya tidak error karena belum diaktivasi
+
+pacman -Sy git
+git clone https://github.com/AdjiPutra-Net/myprojectt.git
+cd myprojectt
+cd mynotegithub_open_source/
+chmod +x after_install_arch_dualboot.sh
+./after_install_arch_dualboot.sh
+
+pacman -Sy git
+git clone https://github.com/AdjiPutra-Net/myprojectt.git
+cd myprojectt
+cd mynotegithub_open_source/
+chmod +x after_install_arch_dualboot.sh
+./after_install_arch_dualboot.sh
 ```
 
 2. pra_install_arch_dualboot.sh

@@ -237,19 +237,19 @@ echo -e "\n✅ \033[1mGRUB berhasil diinstall dan dikonfigurasi!\033[0m"
 
 #!/bin/bash
 
-echo -e "\n🧹 \033[1mTahap 11: Exit, Unmount & Reboot\033[0m"
+echo -e "\n🧹 \e[1mTahap 11: Exit, Unmount & Reboot\e[0m"
 echo "------------------------------------------"
 
-# ✅ Deteksi beneran apakah sedang di chroot (device + inode comparison)
+# ✅ Deteksi beneran apakah sedang di chroot (perbandingan device:inode / vs /proc/1/root)
 if [[ "$(stat -c %d:%i /)" != "$(stat -c %d:%i /proc/1/root)" ]]; then
-    echo -e "⚠️  Saat ini lo masih berada di dalam lingkungan \033[1mchroot\033[0m (/mnt)."
-    echo "🔚 Untuk melanjutkan:"
-    echo "   ➜ Ketik perintah: \033[1mexit\033[0m"
-    echo "   ➜ Lalu jalankan script ini lagi dari \033[1mlive ISO (di luar chroot)\033[0m"
+    echo -e "⚠️  Saat ini lo masih berada di dalam lingkungan \e[1mchroot\e[0m (/mnt)."
+    echo -e "🔚 Untuk melanjutkan:"
+    echo -e "   ➜ Ketik perintah: \e[1mexit\e[0m"
+    echo -e "   ➜ Lalu jalankan script ini lagi dari \e[1mlive ISO (di luar chroot)\e[0m"
     exit 1
 fi
 
-# ✅ Unmount semua partisi dari /mnt (jika masih ada)
+# ✅ Unmount semua partisi dari /mnt jika masih ter-mount
 if ! mountpoint -q /mnt; then
     echo "❗ /mnt sudah tidak ter-mount. Mungkin udah pernah di-unmount sebelumnya."
 else
@@ -263,20 +263,20 @@ else
     fi
 fi
 
-# ✅ Reminder user
-echo -e "\n📋 \033[1mCatatan Penting Sebelum Reboot:\033[0m"
+# ✅ Reminder ke user sebelum reboot
+echo -e "\n📋 \e[1mCatatan Penting Sebelum Reboot:\e[0m"
 echo "✅ Instalasi Arch Linux sudah selesai dan sistem sudah terpasang di disk."
-echo "🛑 Pastikan lo \033[1mCABUT USB atau detach ISO\033[0m sebelum reboot:"
+echo "🛑 Pastikan lo \e[1mCABUT USB atau detach ISO\e[0m sebelum reboot:"
 echo "   - Real PC? ➜ Cabut flashdisk/USB bootable"
 echo "   - VirtualBox/VMWare? ➜ Detach ISO image dari optical drive (storage setting)"
 
 # ✅ Konfirmasi reboot
 read -rp $'\n🔁 Mau reboot sekarang? [Y/n]: ' jawab
-jawab=${jawab,,}
+jawab=${jawab,,} # lowercase semua
 
 if [[ "$jawab" =~ ^(y|yes)?$ || "$jawab" == "" ]]; then
     echo -e "\n🚀 Rebooting sekarang..."
-    reboot || echo -e "⚠️  \033[1mGagal reboot otomatis.\033[0m Silakan ketik manual: \033[1mreboot\033[0m"
+    reboot || echo -e "⚠️  \e[1mGagal reboot otomatis.\e[0m Silakan ketik manual: \e[1mreboot\e[0m"
 else
-    echo "✅ Oke, lo bisa reboot nanti dengan perintah: \033[1mreboot\033[0m"
+    echo -e "✅ Oke, lo bisa reboot nanti dengan perintah: \e[1mreboot\e[0m"
 fi

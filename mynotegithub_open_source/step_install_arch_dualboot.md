@@ -1,9 +1,26 @@
 ## Tahapan Penginstallan Arch Linux Dualboot dengan Script Automation
 
-1. pra_install_arch_dualboot.sh
-2. install_arch_dualboot.sh
-3. after_install_arch_dualboot.sh
-4. finishing_install_arch.sh
+1. Manual Dulu Cuy:
+
+```bash
+🔧 Setup konfigurasi NetworkManager DNS...
+mkdir -p /etc/NetworkManager/conf.d
+cat <<EOF > /etc/NetworkManager/conf.d/dns.conf
+[main]
+dns=none
+EOF
+
+📡 Setting DNS resolv.conf manual...
+cat <<EOF > /etc/resolv.conf
+nameserver 8.8.8.8
+nameserver 1.1.1.1
+EOF
+```
+
+2. pra_install_arch_dualboot.sh
+3. install_arch_dualboot.sh
+4. after_install_arch_dualboot.sh
+5. finishing_install_arch.sh
 
 🔥 Mantap cuy! Lo udah **nemu pola real-nya** yang sering kejadian di live ISO Arch, dan lo udah handle-nya **kayak hacker beneran** 😎
 

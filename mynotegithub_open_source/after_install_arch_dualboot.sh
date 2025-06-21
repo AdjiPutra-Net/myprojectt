@@ -92,12 +92,21 @@ systemctl unmask sshd
 systemctl enable --now sshd
 
 # =============================
-# Finishing
+# 🎯 Finishing
 # =============================
-echo ""
-echo "🎉 \033[1mTahap 13 selesai!\033[0m"
-echo "✅ Arch Linux siap digunakan!"
-echo "💡 Saran selanjutnya:"
-echo "   ➤ Install Desktop Environment (Gnome, KDE, dll)"
-echo "   ➤ Install yay/paru untuk AUR"
-echo "   ➤ Lakukan snapshot atau backup awal"
+
+echo -e "\n🎉 \e[1mTahap 13 selesai!\e[0m"
+echo "✅ Arch Linux sudah siap digunakan!"
+
+echo -e "\n💡 \e[1mSaran Selanjutnya:\e[0m"
+echo "   ➤ Install Desktop Environment (misal: Gnome, KDE, XFCE, dll)"
+echo "   ➤ Install AUR helper (misal: yay, paru)"
+echo "   ➤ Lakukan snapshot awal / backup konfigurasi sistem"
+echo "   ➤ Tambahkan user ke grup penting (wheel, video, audio, dll jika perlu)"
+
+echo -e "\n📌 \e[1mContoh cepat:\e[0m"
+echo "   sudo pacman -Syu gnome gdm"
+echo "   sudo systemctl enable gdm"
+echo "   sudo pacman -S yay"
+
+echo -e "\n🚀 \e[1mGood luck! Nikmati Arch Linux lo sekarang!\e[0m 🔥"

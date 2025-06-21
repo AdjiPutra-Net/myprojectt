@@ -243,7 +243,8 @@ echo -e "\n✅ \033[1mGRUB berhasil diinstall dan dikonfigurasi!\033[0m"
 
 echo -e "\n🎉 \e[1mInstalasi Arch Linux Selesai!\e[0m"
 echo "--------------------------------------------------"
-echo "📦 Semua konfigurasi sistem (timezone, locale, user, bootloader) sudah sukses diinstal ke hardisk/SSD kamu."
+echo "📦 Semua konfigurasi sistem (timezone, locale, user, bootloader)"
+echo "   sudah sukses diinstal ke hardisk/SSD kamu."
 
 echo -e "\n🚀 \e[1mLangkah Selanjutnya (Manual):\e[0m"
 echo -e "➤ 1. Keluar dari lingkungan chroot:"
@@ -252,20 +253,21 @@ echo -e "   🔧 Keluar dari sistem sementara (chroot), untuk balik ke Live ISO.
 
 echo -e "\n➤ 2. Unmount semua partisi dari /mnt:"
 echo -e "   \e[1mumount -R /mnt\e[0m"
-echo -e "   💡 Mencopot koneksi mount dari Live ISO ke disk, karena semua data udah masuk disk."
+echo -e "   💡 Mencopot koneksi mount dari Live ISO ke disk,"
+echo -e "      karena semua data udah masuk disk."
 
 echo -e "\n➤ 3. Pilih salah satu opsi berikut:"
-echo -e "   \e[1mreboot\e[0m      🔁 Untuk restart sistem langsung ke Arch Linux yang baru diinstall"
-echo -e "   \e[1mshutdown -P now\e[0m 🔌 Untuk mematikan komputer (jika kamu mau cabut USB, atau ganti OS)"
+echo -e "   \e[1mreboot\e[0m           🔁 Untuk restart langsung ke Arch Linux"
+echo -e "   \e[1mshutdown -P now\e[0m  🔌 Untuk matikan komputer dulu"
 
-echo -e "\n⚠️ \e[1mPERHATIKAN:\e[0m"
-echo "✅ Sebelum reboot atau shutdown:"
-echo "   - Cabut flashdisk bootable atau detach ISO"
-echo "   - Kalau pakai VirtualBox / VMWare, detach ISO dari Storage Settings"
-echo "❌ Kalau tidak, nanti sistem booting balik ke halaman installer Arch ISO lagi."
+echo -e "\n⚠️  \e[1mPERHATIKAN:\e[0m"
+echo -e "✅ Sebelum reboot/shutdown:"
+echo -e "   - Cabut flashdisk bootable / detach ISO image"
+echo -e "   - Kalau pakai VirtualBox / VMWare: detach ISO dari Storage Settings"
+echo -e "❌ Kalau tidak, sistem bisa booting balik ke installer Arch ISO lagi."
 
 echo -e "\n📌 \e[1mRekomendasi:\e[0m"
-echo "🖥️  Real PC Dualboot (dengan Windows)? ➜ \e[1mCabut USB lalu reboot\e[0m"
-echo "🖥️  VM atau ingin hapus ISO?           ➜ \e[1mshutdown -P now lalu hapus ISO\e[0m"
+echo -e "🖥️  Real PC Dualboot (dengan Windows)? ➜ \e[1mCabut USB lalu reboot\e[0m"
+echo -e "🖥️  VM atau mau hapus ISO?            ➜ \e[1mshutdown -P now lalu hapus ISO\e[0m"
 
 echo -e "\n✅ \e[1mSelesai. Sampai ketemu di sistem Arch Linux kamu!\e[0m 🚀"

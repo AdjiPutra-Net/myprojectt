@@ -231,16 +231,16 @@ echo "✅ \033[1mGRUB berhasil diinstall dan dikonfigurasi!\033[0m"
 echo -e "\n🧹 \033[1mTahap 12: Exit, Unmount & Reboot\033[0m"
 echo "------------------------------------------"
 
-# Deteksi apakah masih di dalam chroot (dijalankan dari arch-chroot)
-if grep -q '/mnt' /proc/1/mounts && [[ "$(realpath /proc/1/root)" == "/" ]]; then
-    echo "⚠️  Saat ini lo masih berada di dalam lingkungan \033[1mchroot\033[0m (/mnt)."
+# ✅ Deteksi apakah kita masih di dalam chroot
+if grep -q '/mnt' /proc/1/mountinfo && [ "$(readlink /proc/1/root)" != "/" ]; then
+    echo -e "⚠️  Saat ini lo masih berada di dalam lingkungan \033[1mchroot\033[0m (/mnt)."
     echo "🔚 Untuk melanjutkan:"
     echo "   ➜ Ketik perintah: \033[1mexit\033[0m"
     echo "   ➜ Lalu jalankan script ini lagi dari \033[1mlive ISO (di luar chroot)\033[0m"
     exit 1
 fi
 
-# Validasi mount point
+# Unmount semua partisi dari /mnt
 if ! mountpoint -q /mnt; then
     echo "❗ /mnt sudah tidak ter-mount. Mungkin udah pernah di-unmount sebelumnya."
 else
@@ -255,7 +255,7 @@ else
     fi
 fi
 
-# Instruksi ke user sebelum reboot
+# Reminder ke user
 echo -e "\n📋 \033[1mCatatan Penting Sebelum Reboot:\033[0m"
 echo "✅ Instalasi Arch Linux sudah selesai dan sistem sudah terpasang di disk."
 echo "🛑 Pastikan lo \033[1mCABUT USB atau detach ISO\033[0m sebelum reboot:"

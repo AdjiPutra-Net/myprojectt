@@ -16,6 +16,8 @@ cat <<EOF > /etc/resolv.conf
 nameserver 8.8.8.8
 nameserver 1.1.1.1
 EOF
+
+# lalu setelah itu tunggu 1 menit untuk aktivasi keyring public-key dari archnya, supaya saat kita update/upgrade/hapus/install paket diarchnya tidak error karena belum diaktivasi
 ```
 
 2. pra_install_arch_dualboot.sh

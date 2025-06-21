@@ -17,7 +17,7 @@ nameserver 8.8.8.8
 nameserver 1.1.1.1
 EOF
 
-# lalu setelah itu tunggu 1 menit untuk aktivasi keyring public-key dari archnya, supaya saat kita update/upgrade/hapus/install paket diarchnya tidak error karena belum diaktivasi
+# lalu setelah itu tunggu 5 menit maksimal, 3 menit minimal untuk aktivasi keyring public-key dari archnya, supaya saat kita update/upgrade/hapus/install paket diarchnya tidak error karena belum diaktivasi
 
 pacman -Sy git
 git clone https://github.com/AdjiPutra-Net/myprojectt.git
@@ -33,6 +33,13 @@ cd mynotegithub_open_source/
 chmod +x install_arch_dualboot.sh
 ./install_arch_dualboot.sh
 
+# Setelah installasi selesai, jalankan perintah ini secara manual
+exit # keluar dari sistem chroot, 50% masih live iso dan 50% sudah terinstall permanent dihardisk/ssd
+umount -R /mnt # mencopot semua data yang ada dilive iso karena data sudah masuk kedalam hardisk/ssd bukan iso lagi
+# nah ada 2 opsi pada perintah ini
+reboot # disarankan sebelum menjalankan perintah ini flashdisk sudah tercabut agar tidak kembeli ke page installer dan lebih direkomendasikan user dualboot
+shutdown -P now # disarankan sesudah menjalankan perintah ini hapus iso nya agar tidak kembali ke page installer
+
 # 🔧 Setup konfigurasi NetworkManager DNS...
 rm /etc/resolv.conf
 mkdir -p /etc/NetworkManager/conf.d
@@ -47,7 +54,7 @@ nameserver 8.8.8.8
 nameserver 1.1.1.1
 EOF
 
-# lalu setelah itu tunggu 1 menit untuk aktivasi keyring public-key dari archnya, supaya saat kita update/upgrade/hapus/install paket diarchnya tidak error karena belum diaktivasi
+# lalu setelah itu tunggu 5 menit maksimal, 3 menit minimal untuk aktivasi keyring public-key dari archnya, supaya saat kita update/upgrade/hapus/install paket diarchnya tidak error karena belum diaktivasi
 
 pacman -Sy git
 git clone https://github.com/AdjiPutra-Net/myprojectt.git

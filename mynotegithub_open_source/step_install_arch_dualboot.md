@@ -92,6 +92,7 @@ chmod +x
 ```
 
 ## Tahapan Penggunaan Script Automationnya!
+
 2. pra_install_arch_dualboot.sh
 3. install_arch_dualboot.sh
 4. sebelum_ke_after_install_arch.sh

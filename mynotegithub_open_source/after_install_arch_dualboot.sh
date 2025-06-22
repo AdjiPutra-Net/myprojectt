@@ -24,7 +24,7 @@ echo "🚀 Enable + Start NetworkManager..."
 systemctl enable --now NetworkManager
 
 # Tunggu sebentar biar NetworkManager siap
-sleep 2
+sleep 5
 
 chattr -i /etc/resolv.conf
 
@@ -36,6 +36,8 @@ if ping -c 2 archlinux.org &>/dev/null; then
 else
   echo "❌ Tidak ada koneksi. Cek NetworkManager dan interface."
 fi
+
+sleep 180
 
 # Update dan install reflector
 echo "🔁 Update sistem & install reflector..."

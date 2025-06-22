@@ -9,7 +9,7 @@ echo "-----------------------------------------------"
 # Sinkronisasi waktu biar keyring gak error
 echo "⏳ Sinkronisasi waktu (timedatectl)..."
 timedatectl set-ntp true
-sleep 2
+sleep 5
 
 # Tes koneksi ke domain arch
 echo "📶 Cek koneksi internet ke archlinux.org..."
@@ -128,7 +128,7 @@ echo "   🔴 Swap   : 2G - 8G (opsional, type: Linux swap)"
 
 # Jalankan cfdisk
 echo -e "\n🚀 Menjalankan cfdisk di $disk..."
-sleep 2
+sleep 5
 cfdisk "$disk"
 
 # Tampilkan hasil partisi
@@ -270,7 +270,7 @@ fi
 echo -e "\033[1;32m✅ /mnt sudah siap.\033[0m"
 
 # Paket default
-default_pkgs="base linux linux-firmware networkmanager sudo grub efibootmgr vim nano git base-devel wget"
+default_pkgs="base linux networkmanager sudo grub efibootmgr vim nano git base-devel wget"
 
 echo -e "\n📦 \033[1mDaftar Paket Default:\033[0m"
 echo "$default_pkgs"
@@ -286,7 +286,7 @@ echo -e "📁 Target: \033[1;34m/mnt\033[0m\n"
 
 # Logging
 logfile="pacstrap-install.log"
-sleep 2
+sleep 5
 
 pacstrap /mnt $all_pkgs 2>&1 | tee "$logfile"
 
@@ -415,5 +415,5 @@ fi
 
 # Jalankan chroot
 echo -e "\n🚪 Masuk ke sistem dengan: \033[1march-chroot /mnt\033[0m\n"
-sleep 1
+sleep 5
 arch-chroot /mnt

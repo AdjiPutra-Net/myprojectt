@@ -1,3 +1,0 @@
-1. IDS
-2. OpenVPN
-3. Database Secure 

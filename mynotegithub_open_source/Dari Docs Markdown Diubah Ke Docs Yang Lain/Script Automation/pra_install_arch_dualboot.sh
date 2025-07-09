@@ -139,10 +139,11 @@ echo -e "\n📦 \033[1mLanjut ke tahap berikutnya: Format & Mount\033[0m (jangan
 
 #!/bin/bash
 
-# ====================================================
-# 🔁 Tahap 4: Format dan Mount Partisi (Smart Auto)
-# ====================================================
-echo -e "\n🔁 \e[1mTahap 4: Format dan Mount Partisi\e[0m"
+# ========================================================
+# 🔁 Tahap 4 (BTRFS): Format & Mount dengan Subvolume
+# ========================================================
+
+echo -e "\n🔁 \e[1mTahap 4: Format dan Mount Partisi (BTRFS)\e[0m"
 echo "----------------------------------------------------"
 
 # ===============================
@@ -159,14 +160,12 @@ else
 fi
 
 # ===============================
-# 📥 Input manual partisi lainnya
+# 📥 Input partisi
 # ===============================
 echo ""
-read -rp "🖋️  Masukkan partisi ROOT (misal: /dev/sda2): " root_part
-read -rp "📦 Masukkan partisi HOME (opsional, tekan Enter jika tidak ada): " home_part
+read -rp "🖋️  Masukkan partisi ROOT (BTRFS) (misal: /dev/sda2): " root_part
 read -rp "📀 Masukkan partisi SWAP (opsional, tekan Enter jika tidak ada): " swap_part
 
-# Kalau belum terdeteksi EFI otomatis, minta input manual
 if [[ $efi_exists == false ]]; then
     read -rp "🧬 Masukkan partisi EFI (misal: /dev/sda1): " efi_part
 else
@@ -174,69 +173,61 @@ else
 fi
 
 # ===============================
-# ✅ Validasi semua partisi
+# ✅ Validasi partisi
 # ===============================
-for part in "$root_part" "$home_part" "$swap_part" "$efi_part"; do
+for part in "$root_part" "$swap_part" "$efi_part"; do
     if [[ -n "$part" && ! -b "$part" ]]; then
-        echo -e "❌ \e[1;31m$part bukan partisi valid!\e[0m Cek lagi dengan lsblk."
+        echo -e "❌ \e[1;31m$part bukan partisi valid!\e[0m"
         exit 1
     fi
 done
 
 # ===============================
-# 🧹 Format semua partisi
+# 🧹 Format partisi
 # ===============================
 echo -e "\n🧹 \e[1mMemformat partisi...\e[0m"
+mkfs.btrfs -f "$root_part"
+mkfs.fat -F32 "$efi_part"
 
-# Format EFI
-if [[ -n "$efi_part" ]]; then
-    echo "📁 Format EFI: $efi_part"
-    mkfs.fat -F32 "$efi_part"
-fi
-
-# Format ROOT
-echo "📁 Format ROOT: $root_part"
-mkfs.ext4 "$root_part"
-
-# Format HOME (opsional)
-if [[ -n "$home_part" ]]; then
-    echo "📁 Format HOME: $home_part"
-    mkfs.ext4 "$home_part"
-fi
-
-# Setup SWAP (opsional)
 if [[ -n "$swap_part" ]]; then
-    echo "📀 Setup SWAP: $swap_part"
     mkswap "$swap_part"
     swapon "$swap_part"
 fi
 
 # ===============================
-# 🔧 Mounting Partisi
+# 🧱 Buat Subvolume Wajib
 # ===============================
-echo -e "\n🔧 \e[1mMounting partisi ke /mnt...\e[0m"
-
+echo -e "\n📁 Membuat subvolume BTRFS..."
 mount "$root_part" /mnt
 
-# Buat direktori boot/efi kalau belum ada
+btrfs subvolume create /mnt/@
+btrfs subvolume create /mnt/@home
+btrfs subvolume create /mnt/@snapshots
+
+umount /mnt
+
+# ===============================
+# 🔧 Mount Subvolume
+# ===============================
+echo -e "\n🔧 Mounting subvolume ke lokasi..."
+mount -o noatime,compress=zstd,space_cache=v2,subvol=@ "$root_part" /mnt
+
+mkdir -p /mnt/home
+mount -o noatime,compress=zstd,space_cache=v2,subvol=@home "$root_part" /mnt/home
+
+mkdir -p /mnt/.snapshots
+mount -o noatime,compress=zstd,space_cache=v2,subvol=@snapshots "$root_part" /mnt/.snapshots
+
 mkdir -p /mnt/boot/efi
 mount "$efi_part" /mnt/boot/efi
 
-# Mount HOME (opsional)
-if [[ -n "$home_part" ]]; then
-    mkdir -p /mnt/home
-    mount "$home_part" /mnt/home
-fi
-
 # ===============================
-# ✅ Hasil Akhir
+# ✅ Status Akhir
 # ===============================
 echo -e "\n✅ \e[1mSemua partisi berhasil diformat & dimount.\e[0m"
-echo -e "📋 Status mount:"
 lsblk -o NAME,MOUNTPOINT,FSTYPE,SIZE | grep -E 'mnt|NAME'
 
-echo -e "\n🚀 Siap lanjut ke tahap instalasi sistem dasar Arch Linux!"
-
+echo -e "\n🚀 Siap lanjut ke tahap pacstrap install base system!"
 
 #!/bin/bash
 

@@ -78,8 +78,8 @@ pacman -Sy git
 git clone https://github.com/AdjiPutra-Net/myprojectt.git
 cd myprojectt
 cd mynotegithub_open_source/'Dari Docs Markdown Diubah Ke Docs Yang Lain'/'Script Automation'/
-chmod +x after_install_arch_dualboot.sh
-./after_install_arch_dualboot.sh
+chmod +x 
+sudo ./after_install_arch_dualboot.sh
 ```
 
 

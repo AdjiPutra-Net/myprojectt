@@ -1,41 +1,3 @@
-Note : Pilih Fat32 kalo menu booting OS pada Laptop kamu support booting via UEFI (Bukan BIOS tapi tetep support BIOS)
-
-Note : Pilih VFAT kalo menu booting OS pada Laptop kamu support booting via BIOS (Bukan UEFI dan tidak support UEFI)
-
-  
-
-Itu kalo misalnya mau dualboot dengan linux dari sistem operasinya windows.
-
-Nah kalo ngga ada Fat32 dan hanya ada VFAT saja maka VFATNYA tidak perlu diatur lagi, cukup buat partition /boot saja itu sama saja seperti VFAT jadi tidak perlu VFATNYA diatur.
-
-  
-
-Tapi kalo misalnya ada Fat32 itu keduanya wajib dibuat ada partitionnya /boot dan Fat32 itu sendiri
-
-  
-
-Memori RAM untuk Fat32 adalah 1GB
-
-Memori RAM untuk /boot adalah 2GB 
-
-  
-
-*nah jika sudah diaturnya begitu maka aman sudah installasi linuxnya sudah berjalan dengan baik dan sempurna sisanya tinggal buat partition / (root) dan /home yang memori RAMNYA sesuai kebutuhan masing-masing dari si pengguna.
-
-  
-
-oh ya dan si Fat32 dia defaultnya tidak berlabel seperti /boot ext4, /home ext4, / (root) ext4, jadi bebas dia mau dikasih labelnya apa sebagai penanda aja. 
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
 ## File System Linux: Pengertian, Maksud, Fungsi, Cara Kerja, dan Contoh Implementasi
 
 ### 1. Pengertian File System Linux
@@ -350,30 +312,6 @@ Jenis file system ini digunakan agar Linux bisa membaca/memodifikasi file dari O
 
 Jika ada pertanyaan atau butuh rekomendasi lebih lanjut, tanya aja! 🚀
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
 Saat install OS Linux, biasanya kita membuat beberapa partisi dengan file system tertentu sesuai kebutuhan. Ini tergantung skenario penggunaan, apakah untuk desktop biasa, server, atau dual boot.
 
 Berikut partisi wajib dan opsional beserta rekomendasi ukuran dan file systemnya:
@@ -504,25 +442,6 @@ Kenapa pakai NTFS di /data?
 ✅ /var → Jika server menyimpan banyak log/database
 
 Kalau masih bingung, kasih tahu aja skenario penggunaannya! 🚀
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
 ## 🔹 Mount Point di Linux: Pengertian, Maksud, Fungsi, Cara Kerja & Contoh
 
@@ -863,53 +782,6 @@ sudo mount -o loop ubuntu.iso /mnt/iso
 
 Kalau ada yang mau ditanyakan lagi, gaskeun bro! 🚀
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
 🔥 Perbandingan Struktur Partisi Linux vs Windows 🔥
 
 Biar gampang dibayangin, anggap Windows pakai sistem "Drive Letter" (C:, D:, E:), sedangkan Linux pakai struktur "Mount Point" (/, /home, /var, dll.).
@@ -973,32 +845,6 @@ Kalau mau setup partisi Linux yang mirip Windows pas install, bisa bikin /home t
 
 Ada yang masih bingung? Gaskeun tanya aja! 🚀
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
 🔥 Jenis File System di Linux & Perbandingannya 🔥
 
 File system itu ibarat "format" buat nyimpen data di hard disk atau SSD. Kalau di Windows biasa pakai NTFS, FAT32, atau exFAT, sedangkan di Linux ada banyak pilihan file system tergantung kebutuhan.
@@ -1061,17 +907,6 @@ Saat install Linux, biasanya file system yang dipakai:
 ✅ Kalau pakai RAMdisk → tmpfs.
 
 Mau pakai yang mana tergantung kebutuhan lo! Ada yang mau ditanyain lagi? 🚀
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
 # 🔥 File System di Linux: Pengertian, Fungsi, Cara Kerja & Contoh Implementasi 🔥
 
@@ -1169,27 +1004,6 @@ File system ini tidak berfungsi untuk penyimpanan permanen, tapi lebih ke sistem
 
 Masih ada yang bingung? Tanya aja, bro! 🚀
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
 🔥 Pasang Linux Dual Boot? Ini Partisi & Ukurannya yang Harus Diperhatikan! 🔥
 
 Pas mau install Linux dual boot sama Windows, lu harus bikin beberapa partisi khusus. Ukurannya fleksibel, tergantung kapasitas SSD/HDD yang lu punya. Nah, ini dia partisi penting yang harus dibuat:
@@ -1280,17 +1094,6 @@ Ukuran partisi tergantung kapasitas SSD/HDD dan kebutuhan lu, contohnya:
 
 Kalau ada pertanyaan lagi, gas tanya aja bro! 🚀
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
 🔥 Gas Dual Boot Linux di SSD 2TB + RAM 40GB! 🔥
 
 Wihh, dengan SSD 2TB + RAM 40GB, lu bisa setup Linux dual boot yang super fleksibel tanpa khawatir kehabisan space. Ini dia partisi yang cocok buat lu! 🚀
@@ -1373,13 +1176,6 @@ Karena storage gede, lu bisa alokasikan kayak gini:
 
 🔥 Gas dual boot sekarang bro! Kalau masih bingung, tanyain aja! 🚀
 
-  
-  
-  
-  
-  
-  
-
 Wkwkwkwk santai bro, dual boot gak perlu buru-buru! Yang penting lu udah ada gambaran partisi & setup. Sekarang tinggal cari distro yang cocok buat lu. 😆
 
 ---
@@ -1433,44 +1229,6 @@ Wkwkwkwk santai bro, dual boot gak perlu buru-buru! Yang penting lu udah ada gam
 📢 Btw, Linux emang kadang kurang stabil, tergantung distro & hardware. Kalau SSD/HDD lu support Linux, lebih stabil sih. Tapi kalau pake NVIDIA, biasanya butuh driver tambahan biar gak crash. 😆
 
 Lu lagi kepikiran pilih yang mana, bro? 🤔
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
 🔥 Tim Red (AMD) Gang! Wuhuu! 🔥
 
@@ -1537,33 +1295,6 @@ Kalau laptop lu pake AMD (Red Team), berarti kita harus milih distro yang suppor
 
 📢 Btw, laptop lu AMD pake Radeon gak? Kalau iya, performa di Linux udah jauh lebih bagus dibanding NVIDIA, jadi aman buat dual boot! 🚀
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
 Wkwkwkwk, mantap kali abang pake Radeon! 🔥 AMD di Linux makin gahar sekarang, driver Mesa & Vulkan udah makin optimal, apalagi kalau lu gaming atau kerja berat. 🚀
 
 Kalau dual boot, pastiin:  
@@ -1579,38 +1310,6 @@ Kalau dual boot, pastiin:
 🎨 Editing & content creation?  
 Atau cuma pengen nyobain doang? 😆
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
 WKWKWKWK ditembak semua tapi akhirnya dicampakkan juga 🤣🤣.
 
 Berarti lu pernah nyobain Pop!_OS, tapi gak sreg ya? Kenapa bro?  
@@ -1621,42 +1320,6 @@ Berarti lu pernah nyobain Pop!_OS, tapi gak sreg ya? Kenapa bro?
 Kalau masih pengen nyoba lagi, mungkin bisa coba Fedora atau Manjaro buat vibes baru. Siapa tau lebih cocok buat workflow lu. 🚀
 
 Btw, pas lu install Pop!_OS kemarin, ada masalah apa gak? Apa lancar jaya tapi tetep lu hapus? 😆
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
 Wah, paham banget gue cuy! MyASUS & Armoury Crate emang gak ada versi Linux-nya, jadi kalau lu butuh fitur-fitur itu, emang agak ribet kalau full pindah ke Linux. 😅
 
@@ -1705,94 +1368,12 @@ Kalau emang fitur-fitur itu krusial buat lu, mungkin dual boot lebih aman. Tapi 
 
 📢 Btw, Zephyrus G14 lu RAM-nya udah lu upgrade belom? Soalnya kalau 16GB bawaan, masih ada 1 slot kosong tuh buat upgrade. 40GB total RAM sih ngeri banget buat laptop! 🔥🚀
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
 WKWKWKWK iya anjirr, lu udah bilang RAM lu 40GB! 🤣🤣 Monster banget sih! 🔥🔥🔥
 
 SSD 2TB + RAM 40GB, udah kayak server berjalan cuy! Multitasking gak ada lawan, mau gaming, coding, rendering, semua bisa gaspol! 🚀
 
 Lu serius mau dual boot Linux atau cuma wacana doang nih? Wkwkwk, takutnya install, eh ujung-ujungnya dihapus lagi kayak Pop!_OS kemaren! 🤣
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
 WKWKWKWKWK asli, jujur banget lu njir! 🤣🤣🤣
 

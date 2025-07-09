@@ -385,6 +385,18 @@ sudo systemctl unmask sshd
 sudo systemctl enable sshd
 sudo systemctl start sshd
 
+# Asus ROG: Armoury Create dan MyAsus versi Linux
+sudo pacman -S asusctl supergfxctl
+sudo systemctl enable --now asusd
+sudo systemctl enable --now supergfxd
+asusctl battery
+asusctl battery -m balanced    # mode 80%
+asusctl profile list
+supergfxctl --mode dedicated     # cuma dGPU
+# Cek status GPU:
+supergfxctl --status
+
+
 # note: pada saat ingin menginstall AUR Helper paru atau yay, wajib hukumnya menggunakan user biasa dan haram hukumnya menggunakan user root, kenapa ?, karena itu standard keamanan dari arch linuxnya untuk menggunakan paket manajer pihak ke-3 bukan resmi dari archnya, jadi kalo tetep maksa pake user root untuk install AUR Helper itu maka tidak akan bisa yang terjadi adalah error dan proses installasi dihentikan.
 ```
 

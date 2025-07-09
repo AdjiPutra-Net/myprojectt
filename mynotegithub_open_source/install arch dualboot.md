@@ -19,9 +19,9 @@ nameserver 8.8.8.8
 nameserver 1.1.1.1
 EOF
 
-# lalu setelah itu tunggu 5 menit maksimal, 3,5 menit minimal untuk aktivasi keyring public-key dari archnya, supaya saat kita update/upgrade/hapus/install paket diarchnya tidak error karena belum diaktivasi
-
 chattr +i /etc/resolv.conf
+
+# lalu setelah itu tunggu 5 menit maksimal, 3,5 menit minimal untuk aktivasi keyring public-key dari archnya, supaya saat kita update/upgrade/hapus/install paket diarchnya tidak error karena belum diaktivasi
 
 # kasih jeda biar keyring public-key bisa transfer dengan sempurna
 sleep 210
@@ -31,7 +31,7 @@ sleep 210
 pacman -Sy git
 git clone https://github.com/AdjiPutra-Net/myprojectt.git
 cd myprojectt
-cd mynotegithub_open_source/
+cd mynotegithub_open_source/'Dari Docs Markdown Diubah Ke Docs Yang Lain'/'Script Automation'/
 chmod +x pra_install_arch_dualboot.sh
 ./pra_install_arch_dualboot.sh
 
@@ -40,7 +40,7 @@ sleep 5
 pacman -Sy git
 git clone https://github.com/AdjiPutra-Net/myprojectt.git
 cd myprojectt
-cd mynotegithub_open_source/
+cd mynotegithub_open_source/'Dari Docs Markdown Diubah Ke Docs Yang Lain'/'Script Automation'/
 chmod +x install_arch_dualboot.sh
 ./install_arch_dualboot.sh
 
@@ -70,14 +70,14 @@ sleep 210
 pacman -Sy git
 git clone https://github.com/AdjiPutra-Net/myprojectt.git
 cd myprojectt
-cd mynotegithub_open_source/
+cd mynotegithub_open_source/'Dari Docs Markdown Diubah Ke Docs Yang Lain'/'Script Automation'/
 chmod +x after_install_arch_dualboot.sh
 ./after_install_arch_dualboot.sh
 
 pacman -Sy git
 git clone https://github.com/AdjiPutra-Net/myprojectt.git
 cd myprojectt
-cd mynotegithub_open_source/
+cd mynotegithub_open_source/'Dari Docs Markdown Diubah Ke Docs Yang Lain'/'Script Automation'/
 chmod +x after_install_arch_dualboot.sh
 ./after_install_arch_dualboot.sh
 ```

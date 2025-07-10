@@ -95,6 +95,17 @@ pacman -S --noconfirm openssh
 systemctl unmask sshd
 systemctl enable --now sshd
 
+# Asus ROG: Armoury Create dan MyAsus versi Linux
+sudo pacman -S asusctl supergfxctl
+sudo systemctl enable --now asusd
+sudo systemctl enable --now supergfxd
+asusctl battery
+asusctl battery -m balanced    # mode 80%
+asusctl profile list
+supergfxctl --mode dedicated     # cuma dGPU
+# Cek status GPU:
+supergfxctl --status
+
 # =============================
 # 🎯 Finishing
 # =============================

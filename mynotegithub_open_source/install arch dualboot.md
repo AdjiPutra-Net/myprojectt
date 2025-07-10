@@ -164,6 +164,7 @@ cd mynotegithub_open_source/'Dari Docs Markdown Diubah Ke Docs Yang Lain'/'Scrip
 chmod +x after_install_arch_dualboot.sh
 ./after_install_arch_dualboot.sh
 
+# note: pada tahap after_install_arch_dualboot.sh wajib make user biasa bukan user root
 pacman -Sy git
 git clone https://github.com/AdjiPutra-Net/myprojectt.git
 cd myprojectt
@@ -1232,3 +1233,124 @@ Tapi cara ini ribet dan nggak nyaman buat pemakaian sehari-hari. Makanya, **Disp
 
 Kalau lo mau contoh setup LightDM + ganti tema + auto login, tinggal bilang, gw buatin step-nya 🔧
 
+🔥 **Oke bro, langsung aja gw buatin smart automation script install DE Cinnamon di Arch Linux lo yang udah lewat tahap chroot**. Ini udah include semua dari:
+
+- Install Cinnamon DE
+    
+- Install Display Manager (pakai `lightdm`)
+    
+- Enable service
+    
+- Tambahan tools biar usable
+    
+- Bisa dijalankan langsung setelah lo masuk `arch-chroot /mnt`
+    
+
+---
+
+## 🧠 **Smart Script: Install Cinnamon Desktop (Arch Linux)**
+
+```bash
+#!/bin/bash
+
+# ========================================================
+# 🖥️  Tahap 6: Install Desktop Environment - Cinnamon
+# ========================================================
+echo -e "\n🖥️ \033[1mTahap 6: Install DE Cinnamon di Arch Linux\033[0m"
+echo "--------------------------------------------------------"
+
+# =========================
+# ✅ Update sistem dulu
+# =========================
+echo -e "\n🔄 Update mirrorlist & sistem..."
+pacman -Sy --noconfirm
+
+# =========================
+# 📦 Install Cinnamon + Apps
+# =========================
+echo -e "\n📦 Install paket Cinnamon DE dan utilities..."
+pacman -S --noconfirm cinnamon cinnamon-translations xdg-user-dirs xdg-utils gvfs gvfs-mtp gnome-keyring gnome-themes-extra gnome-terminal file-roller
+
+# =========================
+# 🖼️ Install Display Manager
+# =========================
+echo -e "\n🖼️ Install LightDM dan greeter..."
+pacman -S --noconfirm lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings
+
+# Enable LightDM
+echo -e "\n⚙️ Enable LightDM service..."
+systemctl enable lightdm.service
+
+# =========================
+# 🎨 Optional: Theme & Icon Pack (bisa di-skip)
+# =========================
+echo -e "\n🎨 Install tema icon tambahan (opsional)..."
+pacman -S --noconfirm arc-gtk-theme papirus-icon-theme
+
+# =========================
+# 🌐 Install browser & basic tools
+# =========================
+echo -e "\n🌐 Install aplikasi tambahan..."
+pacman -S --noconfirm firefox nano neofetch network-manager-applet
+
+# =========================
+# 🔌 Enable NetworkManager
+# =========================
+systemctl enable NetworkManager.service
+
+# =========================
+# 📁 Buat user folder
+# =========================
+echo -e "\n📁 Setup XDG user dirs..."
+xdg-user-dirs-update
+
+# =========================
+# 🎉 Selesai
+# =========================
+echo -e "\n✅ \033[1;32mCinnamon DE berhasil di-install!\033[0m"
+echo -e "🚀 Reboot setelah keluar dari chroot dan nikmati Arch Linux + Cinnamon!"
+
+```
+
+---
+
+## ⚠️ **Cara Pakai Script Ini:**
+
+1. **Masuk ke chroot dulu:**
+    
+    ```bash
+    arch-chroot /mnt
+    ```
+    
+2. **Jalankan script:**
+    
+    - Bisa salin langsung ke dalam chroot
+        
+    - Atau taruh script-nya di USB dan mount, lalu:
+        
+        ```bash
+        chmod +x install-cinnamon.sh
+        ./install-cinnamon.sh
+        ```
+        
+
+---
+
+## ✅ Output Akhir:
+
+- Cinnamon Desktop siap jalan
+    
+- Display manager LightDM aktif otomatis
+    
+- Internet ready (NetworkManager aktif)
+    
+- Siap reboot langsung masuk GUI
+    
+
+---
+
+Kalau lo mau versi minimal (tanpa Firefox, tema), atau versi **Gnome, KDE, XFCE**, tinggal bilang:
+
+> **"Buatin versi minimal atau gnome bro"** 🎯
+
+Gas install desktopmu, bro! 💻✨

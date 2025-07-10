@@ -16446,7 +16446,3 @@ IPv4 juga punya alamat yang dicadangkan buat keperluan khusus, misalnya:
 
 🔥 Udah paham bro? Kalo masih ada yang bingung, gas tanya aja! 😆🚀
 
-  
-  
-  
-**

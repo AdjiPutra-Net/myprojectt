@@ -96,3 +96,64 @@ install_aur_helper paru
 
 echo
 echo "✅ Selesai! AUR helper yay & paru sudah siap dipakai oleh user '$USERNAME'."
+
+#!/bin/bash
+
+# ========================================================
+# 🖥️  Tahap 6: Install Desktop Environment - Cinnamon
+# ========================================================
+echo -e "\n🖥️ \033[1mTahap 6: Install DE Cinnamon di Arch Linux\033[0m"
+echo "--------------------------------------------------------"
+
+# =========================
+# ✅ Update sistem dulu
+# =========================
+echo -e "\n🔄 Update mirrorlist & sistem..."
+pacman -Sy --noconfirm
+
+# =========================
+# 📦 Install Cinnamon + Apps
+# =========================
+echo -e "\n📦 Install paket Cinnamon DE dan utilities..."
+pacman -S --noconfirm cinnamon cinnamon-translations xdg-user-dirs xdg-utils gvfs gvfs-mtp gnome-keyring gnome-themes-extra gnome-terminal file-roller
+
+# =========================
+# 🖼️ Install Display Manager
+# =========================
+echo -e "\n🖼️ Install LightDM dan greeter..."
+pacman -S --noconfirm lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings
+
+# Enable LightDM
+echo -e "\n⚙️ Enable LightDM service..."
+systemctl enable lightdm.service
+
+# =========================
+# 🎨 Optional: Theme & Icon Pack (bisa di-skip)
+# =========================
+echo -e "\n🎨 Install tema icon tambahan (opsional)..."
+pacman -S --noconfirm arc-gtk-theme papirus-icon-theme
+
+# =========================
+# 🌐 Install browser & basic tools
+# =========================
+echo -e "\n🌐 Install aplikasi tambahan..."
+pacman -S --noconfirm firefox nano neofetch network-manager-applet
+
+# =========================
+# 🔌 Enable NetworkManager
+# =========================
+systemctl enable NetworkManager.service
+
+# =========================
+# 📁 Buat user folder
+# =========================
+echo -e "\n📁 Setup XDG user dirs..."
+xdg-user-dirs-update
+
+# =========================
+# 🎉 Selesai
+# =========================
+echo -e "\n✅ \033[1;32mCinnamon DE berhasil di-install!\033[0m"
+echo -e "🚀 Reboot setelah keluar dari chroot dan nikmati Arch Linux + Cinnamon!"
+
+

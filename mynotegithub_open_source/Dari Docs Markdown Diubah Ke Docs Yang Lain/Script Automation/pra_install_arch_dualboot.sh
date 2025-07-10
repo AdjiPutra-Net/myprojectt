@@ -164,7 +164,8 @@ fi
 # ===============================
 echo ""
 read -rp "🖋️  Masukkan partisi ROOT (BTRFS) (misal: /dev/sda2): " root_part
-read -rp "📀 Masukkan partisi SWAP (opsional, tekan Enter jika tidak ada): " swap_part
+read -rp "📦 Masukkan partisi HOME (BTRFS terpisah, opsional): " home_part
+read -rp "📀 Masukkan partisi SWAP (opsional): " swap_part
 
 if [[ $efi_exists == false ]]; then
     read -rp "🧬 Masukkan partisi EFI (misal: /dev/sda1): " efi_part
@@ -175,7 +176,7 @@ fi
 # ===============================
 # ✅ Validasi partisi
 # ===============================
-for part in "$root_part" "$swap_part" "$efi_part"; do
+for part in "$root_part" "$home_part" "$swap_part" "$efi_part"; do
     if [[ -n "$part" && ! -b "$part" ]]; then
         echo -e "❌ \e[1;31m$part bukan partisi valid!\e[0m"
         exit 1
@@ -187,6 +188,7 @@ done
 # ===============================
 echo -e "\n🧹 \e[1mMemformat partisi...\e[0m"
 mkfs.btrfs -f "$root_part"
+[[ -n "$home_part" ]] && mkfs.btrfs -f "$home_part"
 mkfs.fat -F32 "$efi_part"
 
 if [[ -n "$swap_part" ]]; then
@@ -195,29 +197,33 @@ if [[ -n "$swap_part" ]]; then
 fi
 
 # ===============================
-# 🧱 Buat Subvolume Wajib
+# 🧱 Buat Subvolume Wajib (di root)
 # ===============================
-echo -e "\n📁 Membuat subvolume BTRFS..."
+echo -e "\n📁 Membuat subvolume BTRFS pada partisi root..."
 mount "$root_part" /mnt
 
 btrfs subvolume create /mnt/@
-btrfs subvolume create /mnt/@home
 btrfs subvolume create /mnt/@snapshots
 
 umount /mnt
 
 # ===============================
-# 🔧 Mount Subvolume
+# 🔧 Mounting Subvolume Root
 # ===============================
 echo -e "\n🔧 Mounting subvolume ke lokasi..."
 mount -o noatime,compress=zstd,space_cache=v2,subvol=@ "$root_part" /mnt
 
-mkdir -p /mnt/home
-mount -o noatime,compress=zstd,space_cache=v2,subvol=@home "$root_part" /mnt/home
-
+# Mount subvolume snapshots
 mkdir -p /mnt/.snapshots
 mount -o noatime,compress=zstd,space_cache=v2,subvol=@snapshots "$root_part" /mnt/.snapshots
 
+# Mount partisi /home (jika ada)
+if [[ -n "$home_part" ]]; then
+    mkdir -p /mnt/home
+    mount "$home_part" /mnt/home
+fi
+
+# Mount EFI
 mkdir -p /mnt/boot/efi
 mount "$efi_part" /mnt/boot/efi
 

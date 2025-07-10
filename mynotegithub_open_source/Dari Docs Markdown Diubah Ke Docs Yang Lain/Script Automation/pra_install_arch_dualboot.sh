@@ -75,7 +75,7 @@ fi
 #!/bin/bash
 
 # ============================================
-# 💽 Tahap 3: Partisi Disk - Only Partitioning
+# 💽 Tahap 3: Partisi Disk - Smart Validation
 # ============================================
 
 echo -e "\n💽 \033[1mTahap 3: Partisi Disk Arch Linux\033[0m"
@@ -86,14 +86,15 @@ echo -e "\n🧠 \033[1mDaftar Disk yang Terdeteksi:\033[0m"
 lsblk -dpno NAME,SIZE,MODEL | grep -vE 'loop|boot|rpmb|mmcblk|sr0'
 
 # Input disk target
-echo ""
-read -rp "🖋️  Masukkan nama disk target (misal /dev/sda /dev/nvme0n1): " disk
-
-# Validasi disk
-if [[ ! -b "$disk" ]]; then
-  echo -e "❌ \033[1;31mDisk tidak valid!\033[0m Pastikan formatnya /dev/sdX atau /dev/nvmeXn1"
-  exit 1
-fi
+while true; do
+    echo ""
+    read -rp "🖋️  Masukkan nama disk target (misal /dev/sda /dev/nvme0n1): " disk
+    if [[ -b "$disk" ]]; then
+        break
+    else
+        echo -e "❌ \033[1;31mDisk tidak valid!\033[0m Coba cek dengan lsblk."
+    fi
+done
 
 # Konfirmasi user sebelum lanjut
 echo -e "\n⚠️  \033[1;33mPERINGATAN!\033[0m Semua data di $disk bisa hilang kalau kamu format."
@@ -104,38 +105,47 @@ if [[ "$lanjut" != "y" && "$lanjut" != "yes" ]]; then
   exit 0
 fi
 
-# Deteksi partisi EFI dari OS lain (misalnya Windows)
-echo -e "\n🔍 Mengecek apakah ada partisi EFI (dari OS lain)..."
-efi_detected=$(blkid | grep -iE 'vfat' | grep -iE 'boot|efi')
-
-if [[ -n "$efi_detected" ]]; then
-  echo -e "✅ \033[1;32mPartisi EFI terdeteksi:\033[0m"
-  echo "$efi_detected"
-else
-  echo -e "⚠️  \033[1;33mTidak ditemukan partisi EFI.\033[0m Akan dibuat secara manual."
-fi
-
-# Deteksi skema partisi (GPT/MBR)
-part_scheme=$(parted -s "$disk" print | grep "Partition Table" | awk '{print $3}')
-echo -e "\n📑 Skema Partisi Saat Ini: \033[1;36m${part_scheme^^}\033[0m"
-
-# Panduan partisi
-echo -e "\n📋 \033[1mPanduan Buat Partisi:\033[0m"
-echo "   🟢 EFI    : 300M (type: EFI System)"
-echo "   🔵 Root   : 20G - 100G (type: Linux filesystem)"
-echo "   🟣 Home   : Sisa space (opsional)"
-echo "   🔴 Swap   : 2G - 8G (opsional, type: Linux swap)"
-
 # Jalankan cfdisk
 echo -e "\n🚀 Menjalankan cfdisk di $disk..."
-sleep 5
+sleep 3
 cfdisk "$disk"
 
-# Tampilkan hasil partisi
-echo -e "\n✅ \033[1mSelesai membuat partisi manual via cfdisk.\033[0m"
+# Menampilkan hasil partisi
+echo -e "\n📦 \033[1mPartisi selesai. Silakan input nama partisi untuk setiap mount point:\033[0m"
 lsblk "$disk" -o NAME,FSTYPE,SIZE,TYPE,MOUNTPOINT
 
-echo -e "\n📦 \033[1mLanjut ke tahap berikutnya: Format & Mount\033[0m (jangan lupa simpan nama partisinya!)"
+# ===============================
+# Input partisi wajib
+# ===============================
+function input_partisi() {
+    local label=$1
+    local varname=$2
+    while true; do
+        read -rp "🔢 Masukkan partisi $label (misal /dev/sda1): " input
+        if [[ -b "$input" ]]; then
+            eval "$varname=\"$input\""
+            break
+        else
+            echo -e "❌ \033[1;31m$input bukan partisi valid!\033[0m Coba lihat hasil lsblk di atas."
+        fi
+    done
+}
+
+# Wajib diinput dan valid
+input_partisi "EFI (vfat)" efi_part
+input_partisi "ROOT (btrfs)" root_part
+input_partisi "HOME (btrfs)" home_part
+input_partisi "SWAP (swap)" swap_part
+
+# Tampilkan hasil akhir
+echo -e "\n✅ \033[1mSemua partisi berhasil divalidasi!\033[0m"
+echo -e "📋 \033[1mHasil input partisi:\033[0m"
+echo -e "📁 EFI  : $efi_part"
+echo -e "📁 ROOT : $root_part"
+echo -e "📁 HOME : $home_part"
+echo -e "💾 SWAP : $swap_part"
+
+echo -e "\n🚀 Lanjut ke tahap berikutnya: Format & Mount!"
 
 #!/bin/bash
 
@@ -147,83 +157,79 @@ echo -e "\n🔁 \e[1mTahap 4: Format dan Mount Partisi (BTRFS)\e[0m"
 echo "----------------------------------------------------"
 
 # ===============================
-# 🧠 Auto-detect partisi EFI
+# 🔄 Fungsi input validasi partisi
+# ===============================
+function input_partisi() {
+    local label=$1
+    local varname=$2
+    while true; do
+        read -rp "📥 Masukkan partisi $label (misal: /dev/sdaX): " input
+        if [[ -b "$input" ]]; then
+            eval "$varname=\"$input\""
+            break
+        else
+            echo -e "❌ \e[1;31m$input bukan partisi valid!\e[0m Coba cek lagi dengan lsblk."
+        fi
+    done
+}
+
+# ===============================
+# 🧠 Auto/Manual EFI Part
 # ===============================
 efi_auto=$(lsblk -o NAME,FSTYPE,SIZE,MOUNTPOINT -r | grep -i "vfat" | awk '{print "/dev/"$1}' | head -n1)
-efi_exists=false
 
 if [[ -n "$efi_auto" ]]; then
     echo -e "✅ Partisi EFI terdeteksi otomatis: \e[1m$efi_auto\e[0m"
-    efi_exists=true
-else
-    echo -e "⚠️  Tidak ada partisi EFI terdeteksi otomatis."
-fi
-
-# ===============================
-# 📥 Input partisi
-# ===============================
-echo ""
-read -rp "🖋️  Masukkan partisi ROOT (BTRFS) (misal: /dev/sda2): " root_part
-read -rp "📦 Masukkan partisi HOME (BTRFS terpisah, opsional): " home_part
-read -rp "📀 Masukkan partisi SWAP (opsional): " swap_part
-
-if [[ $efi_exists == false ]]; then
-    read -rp "🧬 Masukkan partisi EFI (misal: /dev/sda1): " efi_part
-else
-    efi_part=$efi_auto
-fi
-
-# ===============================
-# ✅ Validasi partisi
-# ===============================
-for part in "$root_part" "$home_part" "$swap_part" "$efi_part"; do
-    if [[ -n "$part" && ! -b "$part" ]]; then
-        echo -e "❌ \e[1;31m$part bukan partisi valid!\e[0m"
-        exit 1
+    read -rp "Gunakan partisi EFI ini? (Y/n): " use_auto
+    use_auto=${use_auto,,}
+    if [[ "$use_auto" == "n" || "$use_auto" == "no" ]]; then
+        input_partisi "EFI" efi_part
+    else
+        efi_part=$efi_auto
     fi
-done
+else
+    echo -e "⚠️  Tidak ditemukan partisi EFI otomatis."
+    input_partisi "EFI" efi_part
+fi
+
+# ===============================
+# 📥 Input partisi lainnya (wajib)
+# ===============================
+input_partisi "ROOT (BTRFS)" root_part
+input_partisi "HOME (BTRFS)" home_part
+input_partisi "SWAP" swap_part
 
 # ===============================
 # 🧹 Format partisi
 # ===============================
 echo -e "\n🧹 \e[1mMemformat partisi...\e[0m"
 mkfs.btrfs -f "$root_part"
-[[ -n "$home_part" ]] && mkfs.btrfs -f "$home_part"
+mkfs.btrfs -f "$home_part"
 mkfs.fat -F32 "$efi_part"
-
-if [[ -n "$swap_part" ]]; then
-    mkswap "$swap_part"
-    swapon "$swap_part"
-fi
+mkswap "$swap_part"
+swapon "$swap_part"
 
 # ===============================
-# 🧱 Buat Subvolume Wajib (di root)
+# 🧱 Buat Subvolume Wajib
 # ===============================
-echo -e "\n📁 Membuat subvolume BTRFS pada partisi root..."
+echo -e "\n📁 Membuat subvolume BTRFS di partisi ROOT..."
 mount "$root_part" /mnt
-
 btrfs subvolume create /mnt/@
 btrfs subvolume create /mnt/@snapshots
-
 umount /mnt
 
 # ===============================
-# 🔧 Mounting Subvolume Root
+# 🔧 Mounting Subvolume
 # ===============================
-echo -e "\n🔧 Mounting subvolume ke lokasi..."
+echo -e "\n🔧 Mounting subvolume dan partisi..."
 mount -o noatime,compress=zstd,space_cache=v2,subvol=@ "$root_part" /mnt
 
-# Mount subvolume snapshots
 mkdir -p /mnt/.snapshots
 mount -o noatime,compress=zstd,space_cache=v2,subvol=@snapshots "$root_part" /mnt/.snapshots
 
-# Mount partisi /home (jika ada)
-if [[ -n "$home_part" ]]; then
-    mkdir -p /mnt/home
-    mount "$home_part" /mnt/home
-fi
+mkdir -p /mnt/home
+mount "$home_part" /mnt/home
 
-# Mount EFI
 mkdir -p /mnt/boot/efi
 mount "$efi_part" /mnt/boot/efi
 

@@ -2343,3 +2343,65 @@ git checkout main
 > ```
 
 Kalau mau gue buatin list alias Git yang keren dan kepake sehari-hari, tinggal bilang aja ya!
+
+Error yang kamu alami:
+
+```
+! [rejected] main -> main (fetch first)
+error: failed to push some refs
+```
+
+artinya **branch `main` di GitHub (remote)** sudah memiliki commit yang **tidak ada di lokal** kamu. Git melarang push supaya **nggak menimpa histori orang lain atau remote**.
+
+---
+
+### ✅ Solusi
+
+Ada dua cara, tergantung apa yang kamu inginkan:
+
+---
+
+## 🔁 **Opsi 1: Sinkronisasi (Rekomendasi)**
+
+Kalau kamu mau **menggabungkan** dulu isi dari remote sebelum push:
+
+```bash
+git pull origin main --rebase
+```
+
+Setelah itu:
+
+```bash
+git push origin main
+```
+
+**Catatan:**
+
+* `--rebase` menjaga riwayat commit tetap bersih.
+* Kalau ada konflik, Git akan minta kamu beresin konflik dulu.
+
+---
+
+## 🚫 Opsi 2: Force Push (Hati-hati!)
+
+Kalau kamu yakin **ingin timpa semua perubahan di remote** dengan versi lokal kamu (misal kamu adalah satu-satunya kontributor):
+
+```bash
+git push origin main --force
+```
+
+> ⚠️ Ini akan **menghapus commit** yang ada di GitHub tapi **tidak ada di lokal kamu**. Jangan gunakan ini kalau kerja tim!
+
+---
+
+### 💡 Tips Tambahan:
+
+Untuk error `LF will be replaced by CRLF`, itu cuma peringatan soal format newline (`\n` vs `\r\n`). Biasanya bisa diabaikan, tapi kalau mau atur agar Git nggak ribet:
+
+```bash
+git config --global core.autocrlf true  # Untuk Windows
+```
+
+---
+
+Kalau kamu gak yakin milih opsi yang mana, kirim aja isi `git log --oneline origin/main..HEAD` biar aku bantu lihat perbedaannya.

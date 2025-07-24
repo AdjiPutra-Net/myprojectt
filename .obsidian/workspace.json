@@ -1,0 +1,216 @@
+{
+  "main": {
+    "id": "25c4bb50f5b9721f",
+    "type": "split",
+    "children": [
+      {
+        "id": "2ab459123ba63b30",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ef10eb3fba8b5387",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "4c595fd714130adc",
+    "type": "split",
+    "children": [
+      {
+        "id": "ae3cf8b117266302",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "e2ecf61b33710886",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "9e39581a15f91528",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "05297f3533728a68",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 222.5
+  },
+  "right": {
+    "id": "c90a842d5d33a6d7",
+    "type": "split",
+    "children": [
+      {
+        "id": "db3c869aa22e7b3f",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "e42f96650d199418",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Welcome.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for Welcome"
+            }
+          },
+          {
+            "id": "d2a94a26223969f1",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Welcome.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from Welcome"
+            }
+          },
+          {
+            "id": "9e841fe30a92b3c4",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "5aa6b34fb9f4525e",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Welcome.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of Welcome"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false
+    }
+  },
+  "active": "ef10eb3fba8b5387",
+  "lastOpenFiles": [
+    "mynote_private/fun_fact_learning_language.md",
+    "mynote_private/fun_fact_learning_language.pdf",
+    "mynote_private/Math for Tech.md",
+    "mynote_private/Math for Tech.pdf",
+    "mynote_private/Jadwal Aktivitas Harian.pdf",
+    "mynote_private/Jadwal Aktivitas Harian.md",
+    "mynote_private/Motivasi diselaraskan Aksi.md",
+    "mynote_private/Motivasi diselaraskan Aksi.pdf",
+    "mynotegithub_open_source/SMK_HARAPAN BANGSA_Depok_OpenVPN_HARDENING_Stabil.md",
+    "mynotegithub_open_source/SMK_HARAPAN BANGSA_Depok_Keamanan_Database_Mysql_pada_XAMPP_HARDENING.md",
+    "SMK_HARAPAN BANGSA_Depok_CTF_SOAL_8_CTF.md",
+    "SMK_HARAPAN BANGSA_Depok_CTF_SOAL_6_CTF_Stabil.md",
+    "mynotegithub/SMK_HARAPAN BANGSA_Depok_OpenVPN_HARDENING_Stabil.pdf",
+    "mynotegithub/SMK_HARAPAN BANGSA_Depok_Keamanan_Database_Mysql_pada_XAMPP_HARDENING.pdf",
+    "mynotegithub/SMK_HARAPAN BANGSA_Depok_IDS_HARDENING.pdf",
+    "mynotegithub/SMK_HARAPAN BANGSA_Depok_CTF_SOAL_8_CTF.pdf",
+    "mynotegithub/SMK_HARAPAN BANGSA_Depok_CTF_SOAL_6_CTF_Stabil.pdf",
+    "Backup_CTF_Binary_Exploite_LKS.md",
+    "Backup_CTF_Steganography_LKS.md",
+    "Write-up Defensive Linux System.md",
+    "image/binary_exploite12.png",
+    "image/Screenshot 2025-06-12 102539.png",
+    "image/binary_exploite11.png",
+    "image/Screenshot 2025-06-12 102311.png",
+    "image/binary_exploite10.png",
+    "image/Screenshot 2025-06-12 102138.png",
+    "image/binary_exploite9.png",
+    "image/Screenshot 2025-06-12 100210.png",
+    "image/stegano4.png",
+    "image/stegano3.png",
+    "image/binary_exploite1png.md",
+    "SMK_HARAPAN BANGSA_Depok_OpenVPN_HARDENING_Stabil.md",
+    "SMK_HARAPAN BANGSA_Depok_Keamanan_Database_Mysql_pada_XAMPP_HARDENING.md",
+    "test.md",
+    "SMK_HARAPAN BANGSA_Depok_IDS_HARDENING.md",
+    "Write_up_LKS_Cyber_Security_Tingkat_Provinsi_Jawa_Barat_2025_Kota_Depok_SMK HARAPN BANGSA_Hardening.md",
+    "mynotegithub/SMK_HARAPAN BANGSA_Depok_OpenVPN.pdf",
+    "SMK_HARAPAN BANGSA_Depok_Hardening_3.pdf.md",
+    "SMK_HARAPAN BANGSA_Depok_Hardening_2_Keamanan_Akun.pdf.md",
+    "SMK_HARAPAN BANGSA_Depok_Memperkuat_Keamanan_Akun_Hardening_2.pdf.md",
+    "openvpn.md",
+    "ids.md",
+    "secure_database.md",
+    "mynotegithub/openvpn.md",
+    "mynotegithub/ids.md",
+    "Untitled.canvas"
+  ]
+}
